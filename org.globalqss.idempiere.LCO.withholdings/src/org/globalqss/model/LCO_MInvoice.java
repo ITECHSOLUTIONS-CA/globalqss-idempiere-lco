@@ -26,6 +26,8 @@
 package org.globalqss.model;
 
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -33,8 +35,12 @@ import java.util.Properties;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MDocType;
+import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
+import org.compiere.model.MInvoiceBatch;
+import org.compiere.model.MInvoiceBatchLine;
 import org.compiere.model.MLocation;
+import org.compiere.model.MOrder;
 import org.compiere.model.MOrgInfo;
 import org.compiere.model.MPriceList;
 import org.compiere.model.MSysConfig;
@@ -54,11 +60,39 @@ public class LCO_MInvoice extends MInvoice
 	 *
 	 */
 	private static final long serialVersionUID = -924606040343895114L;
-
+	
 	public LCO_MInvoice(Properties ctx, int C_Invoice_ID, String trxName) {
 		super(ctx, C_Invoice_ID, trxName);
 	}
-
+	
+	public LCO_MInvoice(MInOut ship, Timestamp invoiceDate) {
+		super(ship, invoiceDate);
+	}
+	
+	public LCO_MInvoice(MInvoice copy) {
+		super(copy);
+	}
+	
+	public LCO_MInvoice(MInvoiceBatch batch, MInvoiceBatchLine line) {
+		super(batch, line);
+	}
+	
+	public LCO_MInvoice(MOrder order, int C_DocTypeTarget_ID, Timestamp invoiceDate) {
+		super(order, C_DocTypeTarget_ID, invoiceDate);
+	}
+	
+	public LCO_MInvoice(Properties ctx, MInvoice copy, String trxName) {
+		super(ctx, copy, trxName);
+	}
+	
+	public LCO_MInvoice(Properties ctx, MInvoice copy) {
+		super(ctx, copy);
+	}
+	
+	public LCO_MInvoice(Properties ctx, ResultSet rs, String trxName) {
+		super(ctx, rs, trxName);
+	}
+	
 	public int recalcWithholdings() {
 		if (! MSysConfig.getBooleanValue("LCO_USE_WITHHOLDINGS", true, Env.getAD_Client_ID(Env.getCtx())))
 			return 0;
@@ -344,7 +378,8 @@ public class LCO_MInvoice extends MInvoice
 					iwh.setC_Invoice_ID(getC_Invoice_ID());
 					iwh.setDateAcct(getDateAcct());
 					iwh.setDateTrx(getDateInvoiced());
-					iwh.setIsCalcOnPayment( ! wc.isCalcOnInvoice() );
+					iwh.setIsCalcOnInvoice(wc.isCalcOnInvoice());
+					iwh.setIsCalcOnPayment(wc.isCalcOnPayment());
 					iwh.setIsTaxIncluded(false);
 					iwh.setLCO_WithholdingRule_ID(wr.getLCO_WithholdingRule_ID());
 					iwh.setLCO_WithholdingType_ID(wt.getLCO_WithholdingType_ID());

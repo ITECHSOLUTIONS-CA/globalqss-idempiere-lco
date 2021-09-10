@@ -26,14 +26,14 @@ import org.compiere.util.Env;
 
 /** Generated Model for LCO_InvoiceWithholding
  *  @author iDempiere (generated) 
- *  @version Release 3.1 - $Id$ */
+ *  @version Release 8.2 - $Id$ */
 public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithholding, I_Persistent 
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20151110L;
+	private static final long serialVersionUID = 20210906L;
 
     /** Standard Constructor */
     public X_LCO_InvoiceWithholding (Properties ctx, int LCO_InvoiceWithholding_ID, String trxName)
@@ -76,7 +76,7 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 
     public String toString()
     {
-      StringBuffer sb = new StringBuffer ("X_LCO_InvoiceWithholding[")
+      StringBuilder sb = new StringBuilder ("X_LCO_InvoiceWithholding[")
         .append(get_ID()).append("]");
       return sb.toString();
     }
@@ -233,6 +233,27 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 		return (String)get_Value(COLUMNNAME_DocumentNo);
 	}
 
+	/** Set Is Calc On Invoice.
+		@param IsCalcOnInvoice Is Calc On Invoice	  */
+	public void setIsCalcOnInvoice (boolean IsCalcOnInvoice)
+	{
+		set_Value (COLUMNNAME_IsCalcOnInvoice, Boolean.valueOf(IsCalcOnInvoice));
+	}
+
+	/** Get Is Calc On Invoice.
+		@return Is Calc On Invoice	  */
+	public boolean isCalcOnInvoice () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsCalcOnInvoice);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Is Calc On Payment.
 		@param IsCalcOnPayment Is Calc On Payment	  */
 	public void setIsCalcOnPayment (boolean IsCalcOnPayment)
@@ -276,6 +297,26 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 			return "Y".equals(oo);
 		}
 		return false;
+	}
+
+	/** Set Voucher Withholding.
+		@param ITS_VoucherWithholding_ID Voucher Withholding	  */
+	public void setITS_VoucherWithholding_ID (int ITS_VoucherWithholding_ID)
+	{
+		if (ITS_VoucherWithholding_ID < 1) 
+			set_ValueNoCheck (COLUMNNAME_ITS_VoucherWithholding_ID, null);
+		else 
+			set_ValueNoCheck (COLUMNNAME_ITS_VoucherWithholding_ID, Integer.valueOf(ITS_VoucherWithholding_ID));
+	}
+
+	/** Get Voucher Withholding.
+		@return Voucher Withholding	  */
+	public int getITS_VoucherWithholding_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_ITS_VoucherWithholding_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
 	}
 
 	/** Set Create Withholding Reversal.
@@ -324,26 +365,6 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 	public String getLCO_InvoiceWithholding_UU () 
 	{
 		return (String)get_Value(COLUMNNAME_LCO_InvoiceWithholding_UU);
-	}
-
-	/** Set Printed Form Control.
-		@param LCO_PrintedFormControl_ID Printed Form Control	  */
-	public void setLCO_PrintedFormControl_ID (int LCO_PrintedFormControl_ID)
-	{
-		if (LCO_PrintedFormControl_ID < 1) 
-			set_Value (COLUMNNAME_LCO_PrintedFormControl_ID, null);
-		else 
-			set_Value (COLUMNNAME_LCO_PrintedFormControl_ID, Integer.valueOf(LCO_PrintedFormControl_ID));
-	}
-
-	/** Get Printed Form Control.
-		@return Printed Form Control	  */
-	public int getLCO_PrintedFormControl_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_LCO_PrintedFormControl_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
 	}
 
 	public org.globalqss.model.I_LCO_WithholdingRule getLCO_WithholdingRule() throws RuntimeException

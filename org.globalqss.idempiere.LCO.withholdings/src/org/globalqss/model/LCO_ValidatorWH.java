@@ -37,6 +37,7 @@ import org.adempiere.base.event.FactsEventData;
 import org.adempiere.base.event.IEventManager;
 import org.adempiere.base.event.IEventTopics;
 import org.adempiere.base.event.LoginEventData;
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.acct.Doc;
 import org.compiere.acct.DocLine_Allocation;
 import org.compiere.acct.DocTax;
@@ -54,6 +55,7 @@ import org.compiere.model.MPayment;
 import org.compiere.model.MPaymentAllocate;
 import org.compiere.model.MSysConfig;
 import org.compiere.model.PO;
+import org.compiere.model.Query;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -95,6 +97,11 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		registerTableEvent(IEventTopics.DOC_AFTER_VOID, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_REVERSECORRECT, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_REVERSEACCRUAL, MAllocationHdr.Table_Name);
+		
+		//Added By Argenis Rodríguez
+		registerTableEvent(IEventTopics.DOC_BEFORE_VOID, MAllocationHdr.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSEACCRUAL, MAllocationHdr.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSECORRECT, MAllocationHdr.Table_Name);
 
 		registerEvent(IEventTopics.AFTER_LOGIN);
 	}	//	initialize
@@ -173,7 +180,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 						 + " FROM LCO_InvoiceWithholding "
 						+ " WHERE C_Invoice_ID = ? "
 						+ " ORDER BY LCO_InvoiceWithholding_ID";
-					try (PreparedStatement pstmt = DB.prepareStatement(sql, inv.get_TrxName());)
+					try (PreparedStatement pstmt = DB.prepareStatement(sql, inv.get_TrxName()))
 					{
 						pstmt.setInt(1, invreverted.getC_Invoice_ID());
 						ResultSet rs = pstmt.executeQuery();
@@ -188,9 +195,11 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 							newiwh.setTaxBaseAmt(iwh.getTaxBaseAmt().negate());
 							newiwh.setC_Tax_ID(iwh.getC_Tax_ID());
 							newiwh.setIsCalcOnPayment(iwh.isCalcOnPayment());
+							newiwh.setIsCalcOnInvoice(iwh.isCalcOnInvoice());
 							newiwh.setIsActive(iwh.isActive());
 							newiwh.setDateAcct(inv.getDateAcct());
 							newiwh.setDateTrx(inv.getDateInvoiced());
+							newiwh.setITS_VoucherWithholding_ID(iwh.getITS_VoucherWithholding_ID());
 							if (!newiwh.save())
 								throw new RuntimeException("Error saving LCO_InvoiceWithholding docValidate");
 						}
@@ -215,12 +224,12 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					MDocType dt = new MDocType(inv.getCtx(), inv.getC_DocTypeTarget_ID(), inv.get_TrxName());
 					String genwh = dt.get_ValueAsString("GenerateWithholding");
 					if (genwh != null) {
-
-						if (genwh.equals("Y")) {
+						
+						/*if (genwh.equals("Y")) {
 							// document type configured to compel generation of withholdings
 							throw new RuntimeException(Msg.getMsg(inv.getCtx(), "LCO_WithholdingNotGenerated"));
-						}
-
+						}*/
+						
 						if (genwh.equals("A")) {
 							// document type configured to generate withholdings automatically
 							LCO_MInvoice lcoinv = new LCO_MInvoice(inv.getCtx(), inv.getC_Invoice_ID(), inv.get_TrxName());
@@ -275,8 +284,36 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			if (msg != null)
 				throw new RuntimeException(msg);
 		}
-
+		
+		//Added By Argenis Rodríguez
+		if (MAllocationHdr.Table_Name.equals(po.get_TableName())
+				&& (IEventTopics.DOC_BEFORE_VOID.equals(type))
+					|| IEventTopics.DOC_BEFORE_REVERSEACCRUAL.equals(type)
+					|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type))
+			validateAllocationBeforeVoid((MAllocationHdr) po);
 	}	//	doHandleEvent
+	
+	/**
+	 * @author Argenis Rodríguez
+	 * @param alloc
+	 */
+	private void validateAllocationBeforeVoid(MAllocationHdr alloc) {
+		
+		String where = "aline.C_AllocationHdr_ID = ? AND vw.DocStatus IN ('CO', 'CL')"
+				+ " AND LCO_InvoiceWithholding.IsCalcOnInvoice = 'N' AND IsCalcOnPayment = 'N'";
+		
+		boolean match = new Query(alloc.getCtx(), MLCOInvoiceWithholding.Table_Name, where, alloc.get_TrxName())
+				.addJoinClause("INNER JOIN ITS_VoucherWithholding vw"
+						+ " ON vw.ITS_VoucherWithholding_ID = LCO_InvoiceWithholding.ITS_VoucherWithholding_ID")
+				.addJoinClause("INNER JOIN C_AllocationLine aline"
+						+ " ON aline.C_AllocationLine_ID = LCO_InvoiceWithholding.C_AllocationLine_ID")
+				.setOnlyActiveRecords(true)
+				.setParameters(alloc.get_ID())
+				.match();
+		
+		if (match)
+			throw new AdempiereException("@AllocationInVoucher@");
+	}
 
 	private String clearInvoiceWithholdingAmtFromInvoice(MInvoice inv) {
 		// Clear invoice withholding amount
@@ -379,12 +416,13 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			BigDecimal sumwhamt = Env.ZERO;
 			sumwhamt = DB.getSQLValueBD(
 					pay.get_TrxName(),
-					"SELECT COALESCE (SUM (TaxAmt), 0) " +
-					"FROM LCO_InvoiceWithholding " +
-					"WHERE C_Invoice_ID = ? AND " +
-					"IsActive = 'Y' AND " +
-					"IsCalcOnPayment = 'Y' AND " +
-					"Processed = 'N' AND " +
+					"SELECT COALESCE (SUM (iw.TaxAmt), 0) " +
+					"FROM LCO_InvoiceWithholding iw " +
+					"LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = iw.ITS_VoucherWithholding_ID " +
+					"WHERE iw.C_Invoice_ID = ? AND " +
+					"iw.IsActive = 'Y' AND " +
+					"iw.IsCalcOnPayment = 'Y' AND " +
+					"CASE WHEN iw.ITS_VoucherWithholding_ID IS NOT NULL THEN vw.DocStatus = 'CO' ELSE iw.Processed = 'N' END AND " +
 					"C_AllocationLine_ID IS NULL",
 					pay.getC_Invoice_ID());
 			if (sumwhamt == null)
@@ -412,12 +450,13 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					BigDecimal sumwhamt = Env.ZERO;
 					sumwhamt = DB.getSQLValueBD(
 							pay.get_TrxName(),
-							"SELECT COALESCE (SUM (TaxAmt), 0) " +
-							"FROM LCO_InvoiceWithholding " +
-							"WHERE C_Invoice_ID = ? AND " +
-							"IsActive = 'Y' AND " +
-							"IsCalcOnPayment = 'Y' AND " +
-							"Processed = 'N' AND " +
+							"SELECT COALESCE (SUM (iw.TaxAmt), 0) " +
+							"FROM LCO_InvoiceWithholding iw " +
+							"LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = iw.ITS_VoucherWithholding_ID " +
+							"WHERE iw.C_Invoice_ID = ? AND " +
+							"iw.IsActive = 'Y' AND " +
+							"iw.IsCalcOnPayment = 'Y' AND " +
+							"CASE WHEN iw.ITS_VoucherWithholding_ID IS NOT NULL THEN vw.DocStatus = 'CO' ELSE iw.Processed = 'N' END AND " +
 							"C_AllocationLine_ID IS NULL",
 							pal.getC_Invoice_ID());
 					if (sumwhamt == null)
@@ -446,13 +485,16 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			MAllocationLine al = als[i];
 			if (al.getC_Invoice_ID() > 0) {
 				String sql =
-					"SELECT LCO_InvoiceWithholding_ID " +
-					"FROM LCO_InvoiceWithholding " +
-					"WHERE C_Invoice_ID = ? AND " +
-					"IsActive = 'Y' AND " +
-					"IsCalcOnPayment = 'Y' AND " +
-					"Processed = 'N' AND " +
-					"C_AllocationLine_ID IS NULL";
+					"SELECT iw.LCO_InvoiceWithholding_ID " +
+					"FROM LCO_InvoiceWithholding iw " +
+					"LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = iw.ITS_VoucherWithholding_ID " +
+					"WHERE iw.C_Invoice_ID = ? AND " +
+					"iw.IsActive = 'Y' AND " +
+					"iw.IsCalcOnPayment = 'Y' AND " +
+					"iw.C_AllocationLine_ID IS NULL AND " +
+					"CASE WHEN iw.ITS_VoucherWithholding_ID IS NOT NULL THEN " +
+					"vw.DocStatus = 'CO' " +
+					"ELSE iw.Processed = 'N' END ";
 				PreparedStatement pstmt = DB.prepareStatement(sql, ah.get_TrxName());
 				ResultSet rs = null;
 				try {
@@ -465,7 +507,10 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 						iwh.setC_AllocationLine_ID(al.getC_AllocationLine_ID());
 						iwh.setDateAcct(ah.getDateAcct());
 						iwh.setDateTrx(ah.getDateTrx());
-						iwh.setProcessed(true);
+						
+						if (iwh.getITS_VoucherWithholding_ID() <= 0)
+							iwh.setProcessed(true);
+						
 						if (!iwh.save())
 							return "Error saving LCO_InvoiceWithholding completePaymentWithholdings";
 					}
@@ -505,7 +550,8 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 						MLCOInvoiceWithholding iwh = new MLCOInvoiceWithholding(
 								ah.getCtx(), iwhid, ah.get_TrxName());
 						iwh.setC_AllocationLine_ID(0);
-						iwh.setProcessed(false);
+						if (iwh.getITS_VoucherWithholding_ID() <= 0)
+							iwh.setProcessed(false);
 						if (!iwh.save())
 							return "Error saving LCO_InvoiceWithholding reversePaymentWithholdings";
 					}
@@ -556,7 +602,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					  "SELECT i.C_Tax_ID, NVL(SUM(i.TaxBaseAmt),0) AS TaxBaseAmt, NVL(SUM(i.TaxAmt),0) AS TaxAmt, t.Name, t.Rate, t.IsSalesTax "
 					 + " FROM LCO_InvoiceWithholding i, C_Tax t "
 					+ " WHERE i.C_Invoice_ID = ? AND " +
-							 "i.IsCalcOnPayment = 'Y' AND " +
+							 "(i.IsCalcOnPayment = 'Y' OR ITS_VoucherWithholding_ID IS NOT NULL) AND " +
 							 "i.IsActive = 'Y' AND " +
 							 "i.Processed = 'Y' AND " +
 							 "i.C_AllocationLine_ID = ? AND " +
@@ -686,7 +732,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		String upd_proc =
 			"UPDATE LCO_InvoiceWithholding "
 			 + "   SET Processed = 'Y' "
-			 + " WHERE C_Invoice_ID = ? AND IsCalcOnPayment = 'N'";
+			 + " WHERE C_Invoice_ID = ? AND IsCalcOnInvoice = 'Y'";
 		int noupdproc = DB.executeUpdate(upd_proc, inv.getC_Invoice_ID(), inv.get_TrxName());
 		if (noupdproc == -1)
 			return "Error updating processed on invoice withholding";
@@ -727,7 +773,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			String sql =
 				  "SELECT C_Tax_ID, NVL(SUM(TaxBaseAmt),0) AS TaxBaseAmt, NVL(SUM(TaxAmt),0) AS TaxAmt "
 				 + " FROM LCO_InvoiceWithholding "
-				+ " WHERE C_Invoice_ID = ? AND IsCalcOnPayment = 'N' AND IsActive = 'Y' "
+				+ " WHERE C_Invoice_ID = ? AND IsCalcOnInvoice = 'Y' AND IsActive = 'Y' "
 				+ "GROUP BY C_Tax_ID";
 			PreparedStatement pstmt = null;
 			ResultSet rs = null;

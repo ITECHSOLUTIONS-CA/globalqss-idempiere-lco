@@ -31,6 +31,8 @@ import org.adempiere.base.IModelFactory;
 import org.compiere.model.PO;
 import org.compiere.util.Env;
 
+import dev.itechsolutions.model.MITSVoucherWithholding;
+
 public class LCO_ModelFactoryWH implements IModelFactory {
 
 	@Override
@@ -51,6 +53,8 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return X_LCO_WithholdingRule.class;
 		if (X_LCO_WithholdingType.Table_Name.equals(tableName))
 			return X_LCO_WithholdingType.class;
+		if (MITSVoucherWithholding.Table_Name.equals(tableName))
+			return MITSVoucherWithholding.class;
 		return null;
 	}
 
@@ -72,6 +76,8 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return new X_LCO_WithholdingRule(Env.getCtx(), Record_ID, trxName);
 		if (X_LCO_WithholdingType.Table_Name.equals(tableName))
 			return new X_LCO_WithholdingType(Env.getCtx(), Record_ID, trxName);
+		if (MITSVoucherWithholding.Table_Name.equals(tableName))
+			return new MITSVoucherWithholding(Env.getCtx(), Record_ID, trxName);
 		return null;
 	}
 
@@ -93,6 +99,8 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return new X_LCO_WithholdingRule(Env.getCtx(), rs, trxName);
 		if (X_LCO_WithholdingType.Table_Name.equals(tableName))
 			return new X_LCO_WithholdingType(Env.getCtx(), rs, trxName);
+		if (MITSVoucherWithholding.Table_Name.equals(tableName))
+			return new MITSVoucherWithholding(Env.getCtx(), rs, trxName);
 		return null;
 	}
 

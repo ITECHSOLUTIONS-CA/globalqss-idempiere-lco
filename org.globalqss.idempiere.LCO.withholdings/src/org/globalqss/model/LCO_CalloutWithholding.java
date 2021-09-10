@@ -48,6 +48,9 @@ import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 
+import dev.itechsolutions.callout.CalloutVoucher;
+import dev.itechsolutions.model.I_ITS_VoucherWithholding;
+
 /**
  *	LCO_CalloutWithholding
  *
@@ -88,7 +91,12 @@ public class LCO_CalloutWithholding implements IColumnCalloutFactory
 				return new IColumnCallout[]{new FillWriteOffWithAllocations()};
 
 		}
-
+		//Added By Argenis Rodríguez 06-09-2021
+		//ITS_VoucherWithholding.C_DocType_ID
+		else if (I_ITS_VoucherWithholding.Table_Name.equals(tableName)
+				&& I_ITS_VoucherWithholding.COLUMNNAME_C_DocType_ID.equals(columnName))
+			return new IColumnCallout[]{new CalloutVoucher()};
+		
 		return null;
 	}
 

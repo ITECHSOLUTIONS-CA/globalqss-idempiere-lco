@@ -14,32 +14,32 @@
  * ComPiere, Inc., 2620 Augustine Dr. #245, Santa Clara, CA 95054, USA        *
  * or via info@compiere.org or http://www.compiere.org/license.html           *
  *****************************************************************************/
-package org.globalqss.model;
+package dev.itechsolutions.model;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import org.compiere.model.*;
 import org.compiere.util.KeyNamePair;
 
-/** Generated Interface for LCO_InvoiceWithholding
+/** Generated Interface for ITS_VoucherWithholding
  *  @author iDempiere (generated) 
  *  @version Release 8.2
  */
 @SuppressWarnings("all")
-public interface I_LCO_InvoiceWithholding 
+public interface I_ITS_VoucherWithholding 
 {
 
-    /** TableName=LCO_InvoiceWithholding */
-    public static final String Table_Name = "LCO_InvoiceWithholding";
+    /** TableName=ITS_VoucherWithholding */
+    public static final String Table_Name = "ITS_VoucherWithholding";
 
-    /** AD_Table_ID=1000000 */
+    /** AD_Table_ID=1000009 */
     public static final int Table_ID = MTable.getTable_ID(Table_Name);
 
     KeyNamePair Model = new KeyNamePair(Table_ID, Table_Name);
 
-    /** AccessLevel = 1 - Org 
+    /** AccessLevel = 3 - Client - Org 
      */
-    BigDecimal accessLevel = BigDecimal.valueOf(1);
+    BigDecimal accessLevel = BigDecimal.valueOf(3);
 
     /** Load Meta Data */
 
@@ -64,20 +64,65 @@ public interface I_LCO_InvoiceWithholding
 	  */
 	public int getAD_Org_ID();
 
-    /** Column name C_AllocationLine_ID */
-    public static final String COLUMNNAME_C_AllocationLine_ID = "C_AllocationLine_ID";
+    /** Column name C_BPartner_ID */
+    public static final String COLUMNNAME_C_BPartner_ID = "C_BPartner_ID";
 
-	/** Set Allocation Line.
-	  * Allocation Line
+	/** Set Business Partner .
+	  * Identifies a Business Partner
 	  */
-	public void setC_AllocationLine_ID (int C_AllocationLine_ID);
+	public void setC_BPartner_ID (int C_BPartner_ID);
 
-	/** Get Allocation Line.
-	  * Allocation Line
+	/** Get Business Partner .
+	  * Identifies a Business Partner
 	  */
-	public int getC_AllocationLine_ID();
+	public int getC_BPartner_ID();
 
-	public org.compiere.model.I_C_AllocationLine getC_AllocationLine() throws RuntimeException;
+	public org.compiere.model.I_C_BPartner getC_BPartner() throws RuntimeException;
+
+    /** Column name C_ConversionType_ID */
+    public static final String COLUMNNAME_C_ConversionType_ID = "C_ConversionType_ID";
+
+	/** Set Currency Type.
+	  * Currency Conversion Rate Type
+	  */
+	public void setC_ConversionType_ID (int C_ConversionType_ID);
+
+	/** Get Currency Type.
+	  * Currency Conversion Rate Type
+	  */
+	public int getC_ConversionType_ID();
+
+	public org.compiere.model.I_C_ConversionType getC_ConversionType() throws RuntimeException;
+
+    /** Column name C_Currency_ID */
+    public static final String COLUMNNAME_C_Currency_ID = "C_Currency_ID";
+
+	/** Set Currency.
+	  * The Currency for this record
+	  */
+	public void setC_Currency_ID (int C_Currency_ID);
+
+	/** Get Currency.
+	  * The Currency for this record
+	  */
+	public int getC_Currency_ID();
+
+	public org.compiere.model.I_C_Currency getC_Currency() throws RuntimeException;
+
+    /** Column name C_DocType_ID */
+    public static final String COLUMNNAME_C_DocType_ID = "C_DocType_ID";
+
+	/** Set Document Type.
+	  * Document type or rules
+	  */
+	public void setC_DocType_ID (int C_DocType_ID);
+
+	/** Get Document Type.
+	  * Document type or rules
+	  */
+	public int getC_DocType_ID();
+
+	public org.compiere.model.I_C_DocType getC_DocType() throws RuntimeException;
 
     /** Column name C_Invoice_ID */
     public static final String COLUMNNAME_C_Invoice_ID = "C_Invoice_ID";
@@ -110,21 +155,6 @@ public interface I_LCO_InvoiceWithholding
 	  */
 	public int getCreatedBy();
 
-    /** Column name C_Tax_ID */
-    public static final String COLUMNNAME_C_Tax_ID = "C_Tax_ID";
-
-	/** Set Tax.
-	  * Tax identifier
-	  */
-	public void setC_Tax_ID (int C_Tax_ID);
-
-	/** Get Tax.
-	  * Tax identifier
-	  */
-	public int getC_Tax_ID();
-
-	public org.compiere.model.I_C_Tax getC_Tax() throws RuntimeException;
-
     /** Column name DateAcct */
     public static final String COLUMNNAME_DateAcct = "DateAcct";
 
@@ -137,6 +167,32 @@ public interface I_LCO_InvoiceWithholding
 	  * Accounting Date
 	  */
 	public Timestamp getDateAcct();
+
+    /** Column name DateFrom */
+    public static final String COLUMNNAME_DateFrom = "DateFrom";
+
+	/** Set Date From.
+	  * Starting date for a range
+	  */
+	public void setDateFrom (Timestamp DateFrom);
+
+	/** Get Date From.
+	  * Starting date for a range
+	  */
+	public Timestamp getDateFrom();
+
+    /** Column name DateTo */
+    public static final String COLUMNNAME_DateTo = "DateTo";
+
+	/** Set Date To.
+	  * End date of a date range
+	  */
+	public void setDateTo (Timestamp DateTo);
+
+	/** Get Date To.
+	  * End date of a date range
+	  */
+	public Timestamp getDateTo();
 
     /** Column name DateTrx */
     public static final String COLUMNNAME_DateTrx = "DateTrx";
@@ -151,18 +207,31 @@ public interface I_LCO_InvoiceWithholding
 	  */
 	public Timestamp getDateTrx();
 
-    /** Column name Description */
-    public static final String COLUMNNAME_Description = "Description";
+    /** Column name DocAction */
+    public static final String COLUMNNAME_DocAction = "DocAction";
 
-	/** Set Description.
-	  * Optional short description of the record
+	/** Set Document Action.
+	  * The targeted status of the document
 	  */
-	public void setDescription (String Description);
+	public void setDocAction (String DocAction);
 
-	/** Get Description.
-	  * Optional short description of the record
+	/** Get Document Action.
+	  * The targeted status of the document
 	  */
-	public String getDescription();
+	public String getDocAction();
+
+    /** Column name DocStatus */
+    public static final String COLUMNNAME_DocStatus = "DocStatus";
+
+	/** Set Document Status.
+	  * The current status of the document
+	  */
+	public void setDocStatus (String DocStatus);
+
+	/** Get Document Status.
+	  * The current status of the document
+	  */
+	public String getDocStatus();
 
     /** Column name DocumentNo */
     public static final String COLUMNNAME_DocumentNo = "DocumentNo";
@@ -190,36 +259,31 @@ public interface I_LCO_InvoiceWithholding
 	  */
 	public boolean isActive();
 
-    /** Column name IsCalcOnInvoice */
-    public static final String COLUMNNAME_IsCalcOnInvoice = "IsCalcOnInvoice";
+    /** Column name IsApproved */
+    public static final String COLUMNNAME_IsApproved = "IsApproved";
 
-	/** Set Is Calc On Invoice	  */
-	public void setIsCalcOnInvoice (boolean IsCalcOnInvoice);
-
-	/** Get Is Calc On Invoice	  */
-	public boolean isCalcOnInvoice();
-
-    /** Column name IsCalcOnPayment */
-    public static final String COLUMNNAME_IsCalcOnPayment = "IsCalcOnPayment";
-
-	/** Set Is Calc On Payment	  */
-	public void setIsCalcOnPayment (boolean IsCalcOnPayment);
-
-	/** Get Is Calc On Payment	  */
-	public boolean isCalcOnPayment();
-
-    /** Column name IsTaxIncluded */
-    public static final String COLUMNNAME_IsTaxIncluded = "IsTaxIncluded";
-
-	/** Set Price includes Tax.
-	  * Tax is included in the price 
+	/** Set Approved.
+	  * Indicates if this document requires approval
 	  */
-	public void setIsTaxIncluded (boolean IsTaxIncluded);
+	public void setIsApproved (boolean IsApproved);
 
-	/** Get Price includes Tax.
-	  * Tax is included in the price 
+	/** Get Approved.
+	  * Indicates if this document requires approval
 	  */
-	public boolean isTaxIncluded();
+	public boolean isApproved();
+
+    /** Column name IsSOTrx */
+    public static final String COLUMNNAME_IsSOTrx = "IsSOTrx";
+
+	/** Set Sales Transaction.
+	  * This is a Sales Transaction
+	  */
+	public void setIsSOTrx (boolean IsSOTrx);
+
+	/** Get Sales Transaction.
+	  * This is a Sales Transaction
+	  */
+	public boolean isSOTrx();
 
     /** Column name ITS_VoucherWithholding_ID */
     public static final String COLUMNNAME_ITS_VoucherWithholding_ID = "ITS_VoucherWithholding_ID";
@@ -230,44 +294,6 @@ public interface I_LCO_InvoiceWithholding
 	/** Get Voucher Withholding	  */
 	public int getITS_VoucherWithholding_ID();
 
-    /** Column name LCO_CreateWithholdingReversal */
-    public static final String COLUMNNAME_LCO_CreateWithholdingReversal = "LCO_CreateWithholdingReversal";
-
-	/** Set Create Withholding Reversal	  */
-	public void setLCO_CreateWithholdingReversal (String LCO_CreateWithholdingReversal);
-
-	/** Get Create Withholding Reversal	  */
-	public String getLCO_CreateWithholdingReversal();
-
-    /** Column name LCO_InvoiceWithholding_ID */
-    public static final String COLUMNNAME_LCO_InvoiceWithholding_ID = "LCO_InvoiceWithholding_ID";
-
-	/** Set Invoice Withholding	  */
-	public void setLCO_InvoiceWithholding_ID (int LCO_InvoiceWithholding_ID);
-
-	/** Get Invoice Withholding	  */
-	public int getLCO_InvoiceWithholding_ID();
-
-    /** Column name LCO_InvoiceWithholding_UU */
-    public static final String COLUMNNAME_LCO_InvoiceWithholding_UU = "LCO_InvoiceWithholding_UU";
-
-	/** Set LCO_InvoiceWithholding_UU	  */
-	public void setLCO_InvoiceWithholding_UU (String LCO_InvoiceWithholding_UU);
-
-	/** Get LCO_InvoiceWithholding_UU	  */
-	public String getLCO_InvoiceWithholding_UU();
-
-    /** Column name LCO_WithholdingRule_ID */
-    public static final String COLUMNNAME_LCO_WithholdingRule_ID = "LCO_WithholdingRule_ID";
-
-	/** Set Withholding Rule	  */
-	public void setLCO_WithholdingRule_ID (int LCO_WithholdingRule_ID);
-
-	/** Get Withholding Rule	  */
-	public int getLCO_WithholdingRule_ID();
-
-	public org.globalqss.model.I_LCO_WithholdingRule getLCO_WithholdingRule() throws RuntimeException;
-
     /** Column name LCO_WithholdingType_ID */
     public static final String COLUMNNAME_LCO_WithholdingType_ID = "LCO_WithholdingType_ID";
 
@@ -276,21 +302,6 @@ public interface I_LCO_InvoiceWithholding
 
 	/** Get Withholding Type	  */
 	public int getLCO_WithholdingType_ID();
-
-	public org.globalqss.model.I_LCO_WithholdingType getLCO_WithholdingType() throws RuntimeException;
-
-    /** Column name Percent */
-    public static final String COLUMNNAME_Percent = "Percent";
-
-	/** Set Percent.
-	  * Percentage
-	  */
-	public void setPercent (BigDecimal Percent);
-
-	/** Get Percent.
-	  * Percentage
-	  */
-	public BigDecimal getPercent();
 
     /** Column name Processed */
     public static final String COLUMNNAME_Processed = "Processed";
@@ -305,31 +316,14 @@ public interface I_LCO_InvoiceWithholding
 	  */
 	public boolean isProcessed();
 
-    /** Column name TaxAmt */
-    public static final String COLUMNNAME_TaxAmt = "TaxAmt";
+    /** Column name Processing */
+    public static final String COLUMNNAME_Processing = "Processing";
 
-	/** Set Tax Amount.
-	  * Tax Amount for a document
-	  */
-	public void setTaxAmt (BigDecimal TaxAmt);
+	/** Set Process Now	  */
+	public void setProcessing (boolean Processing);
 
-	/** Get Tax Amount.
-	  * Tax Amount for a document
-	  */
-	public BigDecimal getTaxAmt();
-
-    /** Column name TaxBaseAmt */
-    public static final String COLUMNNAME_TaxBaseAmt = "TaxBaseAmt";
-
-	/** Set Tax base Amount.
-	  * Base for calculating the tax amount
-	  */
-	public void setTaxBaseAmt (BigDecimal TaxBaseAmt);
-
-	/** Get Tax base Amount.
-	  * Base for calculating the tax amount
-	  */
-	public BigDecimal getTaxBaseAmt();
+	/** Get Process Now	  */
+	public boolean isProcessing();
 
     /** Column name Updated */
     public static final String COLUMNNAME_Updated = "Updated";

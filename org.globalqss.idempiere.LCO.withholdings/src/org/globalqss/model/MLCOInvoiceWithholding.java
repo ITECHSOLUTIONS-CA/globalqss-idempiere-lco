@@ -45,7 +45,9 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding
 	/**	Static Logger	*/
 	@SuppressWarnings("unused")
 	private static CLogger	s_log	= CLogger.getCLogger (MLCOInvoiceWithholding.class);
-
+	
+	//Added By Argenis Rodríguez 07-09-2021
+	private MInvoice invoice = null;
 
 	/**************************************************************************
 	 * 	Default Constructor
@@ -84,23 +86,22 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding
 				// Fill isCalcOnPayment according to rule
 				X_LCO_WithholdingRule wr = new X_LCO_WithholdingRule(getCtx(), getLCO_WithholdingRule_ID(), get_TrxName());
 				X_LCO_WithholdingCalc wc = new X_LCO_WithholdingCalc(getCtx(), wr.getLCO_WithholdingCalc_ID(), get_TrxName());
-				setIsCalcOnPayment( ! wc.isCalcOnInvoice() );
-
+				setIsCalcOnPayment(wc.isCalcOnPayment());
+				setIsCalcOnInvoice(wc.isCalcOnInvoice());
 			} else {
 				
 				if (inv.isProcessed()) {
 					setIsCalcOnPayment(true);
 				}
-
 			}
-
+			
 			// Fill DateTrx and DateAcct for isCalcOnInvoice according to the invoice
 			if (getC_AllocationLine_ID() <= 0) {
 				setDateAcct(inv.getDateAcct());
 				setDateTrx(inv.getDateInvoiced());
 			}
 		}
-
+		
 		return true;
 	}	//	beforeSave
 
@@ -130,4 +131,20 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding
 		return LCO_MInvoice.updateHeaderWithholding(getC_Invoice_ID(), get_TrxName());
 	}	//	afterDelete
 
+	@Override
+	public MInvoice getC_Invoice() throws RuntimeException {
+		
+		if (invoice == null)
+			invoice = (MInvoice) super.getC_Invoice();
+		
+		return invoice;
+	}
+	
+	/**
+	 * @author Argenis Rodríguez
+	 * @return
+	 */
+	public int getC_BPartner_ID() {
+		return getC_Invoice().getC_BPartner_ID();
+	}
 }	//	MLCOInvoiceWithholding

@@ -28,6 +28,8 @@ package org.globalqss.process;
 import org.adempiere.base.IProcessFactory;
 import org.compiere.process.ProcessCall;
 
+import dev.itechsolutions.process.GenerateInvoiceWithholding;
+
 public class LCO_ProcessFactoryWH implements IProcessFactory {
 
 	@Override
@@ -42,7 +44,14 @@ public class LCO_ProcessFactoryWH implements IProcessFactory {
 				process =  LCO_CreateWithholdingReversal.class.getConstructor().newInstance();
 			} catch (Exception e) {}
 		}
-
+		else if (GenerateInvoiceWithholding.class.getCanonicalName().equals(className))
+		{
+			try {
+				process = GenerateInvoiceWithholding.class.getConstructor().newInstance();
+			} catch (Exception e) {
+			}
+		}
+		
 		return process;
 	}
 
