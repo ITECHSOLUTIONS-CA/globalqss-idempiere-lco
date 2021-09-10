@@ -81,7 +81,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 				.addJoinClause("INNER JOIN C_Invoice ci ON ci.C_Invoice_ID = LCO_InvoiceWithholding.C_Invoice_ID")
 				.setOnlyActiveRecords(true)
 				.setParameters(get_ID())
-				.setOrderBy("ci." + MInvoice.COLUMNNAME_C_BPartner_ID)
+				.setOrderBy("ci." + MInvoice.COLUMNNAME_C_Currency_ID)
 				.list();
 		
 		m_lines = lines.toArray(new MLCOInvoiceWithholding[lines.size()]);
@@ -185,12 +185,12 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		}
 		
 		getLines(true);
-		int lastC_BPartner_ID = -1;
+		int lastC_Currency_ID = -1;
 		MAllocationHdr allocation = null;
 		
 		for (MLCOInvoiceWithholding line: m_lines)
 		{
-			int C_BPartner_ID = line.getC_BPartner_ID();
+			int C_Currency_ID = line.getC_Invoice().getC_Currency_ID();
 			
 			line.setDocumentNo(getDocumentNo());
 			line.setDateTrx(getDateTrx());
@@ -199,9 +199,9 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			
 			if (!line.isCalcOnInvoice() && !line.isCalcOnPayment())
 			{
-				if (allocation == null || C_BPartner_ID != lastC_BPartner_ID)
+				if (allocation == null || C_Currency_ID != lastC_Currency_ID)
 				{
-					lastC_BPartner_ID = C_BPartner_ID;
+					lastC_Currency_ID = C_Currency_ID;
 					
 					if (allocation != null
 							&& !allocation.processIt(MAllocationHdr.ACTION_Complete))
@@ -210,7 +210,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 						return STATUS_Invalid;
 					}
 					
-					allocation = createAllocation(C_DocTypeAllocation_ID);
+					allocation = createAllocation(C_DocTypeAllocation_ID, C_Currency_ID);
 				}
 				
 				MInvoice invoice = line.getC_Invoice();
@@ -219,23 +219,24 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 						, "SELECT invoiceOpen(?, NULL)"
 						, invoice.get_ID());
 				
-				invoiceOpen = ITSMConversionRate.convert(getCtx(), invoiceOpen
-						, invoice.getC_Currency_ID(), getC_Currency_ID()
-						, getDateTrx(), invoice.getC_ConversionType_ID()
+				BigDecimal writeOffAmt = line.getTaxAmt();
+				
+				writeOffAmt = ITSMConversionRate.convert(getCtx(), writeOffAmt
+						, getC_Currency_ID(), C_Currency_ID
+						, invoice.getDateInvoiced(), getC_ConversionType_ID()
 						, getAD_Client_ID(), getAD_Org_ID());
 				
-				if (invoiceOpen == null)
+				if (writeOffAmt == null)
 				{
 					m_processMsg = NoCurrencyConversionException.buildMessage(
-							invoice.getC_Currency_ID(), getC_Currency_ID()
-							, getDateTrx(), invoice.getC_ConversionType_ID()
+							getC_Currency_ID(), C_Currency_ID
+							, invoice.getDateInvoiced(), getC_ConversionType_ID()
 							, getAD_Client_ID(), getAD_Org_ID());
 					
 					return STATUS_Invalid;
 				}
 				
-				BigDecimal writeOffAmt = line.getTaxAmt();
-				BigDecimal overUnderAmt = invoiceOpen.subtract(line.getTaxAmt());
+				BigDecimal overUnderAmt = invoiceOpen.subtract(writeOffAmt);
 				
 				if (!isSOTrx())
 				{
@@ -284,14 +285,14 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 	 * @param C_DocType_ID
 	 * @return
 	 */
-	private MAllocationHdr createAllocation(int C_DocType_ID) {
+	private MAllocationHdr createAllocation(int C_DocType_ID, int C_Currency_ID) {
 		
 		MAllocationHdr allocation = new MAllocationHdr(getCtx(), 0, get_TrxName());
 		allocation.setAD_Org_ID(getAD_Org_ID());
 		allocation.setDateTrx(getDateTrx());
 		allocation.setDateAcct(getDateAcct());
 		allocation.setC_DocType_ID(C_DocType_ID);
-		allocation.setC_Currency_ID(getC_Currency_ID());
+		allocation.setC_Currency_ID(C_Currency_ID);
 		
 		allocation.saveEx();
 		
@@ -350,19 +351,19 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 	 */
 	private String reverseAllocations() {
 		
-		int lastC_BPartner_ID = -1;
+		int lastC_Currency_ID = -1;
 		MAllocationHdr alloc = null;
 		
 		getLines(true);
 		
 		for (MLCOInvoiceWithholding line: m_lines)
 		{
-			int C_BPartner_ID = line.getC_BPartner_ID();
+			int C_Currency_ID = line.getC_Invoice().getC_Currency_ID();
 			
 			if (line.getC_AllocationLine_ID() <= 0)
 				continue;
 			
-			if (alloc == null || lastC_BPartner_ID != C_BPartner_ID)
+			if (alloc == null || lastC_Currency_ID != C_Currency_ID)
 			{
 				if (alloc != null
 						&& alloc.processIt(MAllocationHdr.DOCACTION_Reverse_Correct))
@@ -370,7 +371,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 				
 				alloc = (MAllocationHdr) line.getC_AllocationLine().getC_AllocationHdr();
 				
-				lastC_BPartner_ID = C_BPartner_ID;
+				lastC_Currency_ID = C_Currency_ID;
 			}
 			
 			line.setC_AllocationLine_ID(0);

@@ -34,6 +34,7 @@ import org.globalqss.model.X_LCO_WithholdingRule;
 import org.globalqss.model.X_LCO_WithholdingRuleConf;
 import org.globalqss.model.X_LCO_WithholdingType;
 
+import dev.itechsolutions.exception.NoCurrencyConversionException;
 import dev.itechsolutions.util.ColumnUtils;
 
 /**
@@ -175,7 +176,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 	public int recalcWithholdings(MITSVoucherWithholding voucher) {
 		if (! MSysConfig.getBooleanValue("LCO_USE_WITHHOLDINGS", true, Env.getAD_Client_ID(Env.getCtx())))
 			return 0;
-
+		
 		MDocType dt = new MDocType(getCtx(), getC_DocTypeTarget_ID(), get_TrxName());
 		String genwh = dt.get_ValueAsString("GenerateWithholding");
 		if (genwh == null || genwh.equals("N"))
@@ -458,7 +459,21 @@ public class ITSMInvoice extends LCO_MInvoice {
 					}
 				}
 				log.info("Base: "+base+ " Thresholdmin:"+wc.getThresholdmin());
-
+				
+				if (base != null && voucher != null
+						&& getC_Currency_ID() != voucher.getC_Currency_ID())
+				{
+					base = ITSMConversionRate.convert(getCtx(), base
+							, getC_Currency_ID(), voucher.getC_Currency_ID()
+							, getDateInvoiced(), voucher.getC_ConversionType_ID()
+							, getAD_Client_ID(), getAD_Org_ID());
+					
+					if (base == null)
+						throw new NoCurrencyConversionException(getC_Currency_ID(), voucher.getC_Currency_ID()
+								, getDateInvoiced(), voucher.getC_ConversionType_ID()
+								, getAD_Client_ID(), getAD_Org_ID());
+				}
+				
 				// if base between thresholdmin and thresholdmax inclusive
 				// if thresholdmax = 0 it is ignored
 				if (base != null &&
