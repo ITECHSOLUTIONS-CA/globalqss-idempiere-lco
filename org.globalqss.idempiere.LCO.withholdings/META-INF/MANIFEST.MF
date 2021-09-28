@@ -7,13 +7,17 @@ Bundle-Activator: org.adempiere.plugin.utils.AdempiereActivator
 Bundle-Vendor: GlobalQSS
 Require-Bundle: org.adempiere.base;bundle-version="8.2.0",
  org.adempiere.plugin.utils;bundle-version="8.2.0",
- org.adempiere.base.callout;bundle-version="8.2.0"
+ org.adempiere.base.callout;bundle-version="8.2.0",
+ org.adempiere.ui.zk;bundle-version="8.2.0",
+ zk;bundle-version="9.5.0",
+ zul;bundle-version="9.5.0",
+ org.adempiere.ui;bundle-version="8.2.0",
+ org.idempiere.zk.extra;bundle-version="8.2.0",
+ zcommon;bundle-version="9.5.0"
 Export-Package: org.globalqss.model,
  org.globalqss.process
-Service-Component: OSGI-INF/lco_modelfactorywh.xml,
- OSGI-INF/lco_processfactorywh.xml,
- OSGI-INF/lco_calloutfactorywh.xml,
- OSGI-INF/lco_validatorwh.xml
+Service-Component: OSGI-INF/lco_modelfactorywh.xml,OSGI-INF/lco_processfactorywh.xml,OSGI-INF/lco_calloutfactorywh.xml,OSGI-INF/lco_validatorwh.xml,OSGI-INF/DisplayTypeFactory.xml,
+ OSGI-INF/EditorFactory.xml
 Import-Package: org.osgi.service.event
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .

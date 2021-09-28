@@ -482,7 +482,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 						(wc.getThresholdMax() == null || wc.getThresholdMax().compareTo(Env.ZERO) == 0 || base.compareTo(wc.getThresholdMax()) <= 0) &&
 						tax.getRate() != null &&
 						tax.getRate().compareTo(Env.ZERO) != 0) {
-
+					
 					// insert new withholding record
 					// with: type, tax, base amt, percent, tax amt, trx date, acct date, rule
 					MLCOInvoiceWithholding iwh = new MLCOInvoiceWithholding(getCtx(), 0, get_TrxName());

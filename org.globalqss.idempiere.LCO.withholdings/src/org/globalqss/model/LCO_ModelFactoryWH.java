@@ -32,9 +32,11 @@ import org.compiere.model.PO;
 import org.compiere.util.Env;
 
 import dev.itechsolutions.model.MITSVoucherWithholding;
+import dev.itechsolutions.model.MMunicipality;
+import dev.itechsolutions.model.MParish;
 
 public class LCO_ModelFactoryWH implements IModelFactory {
-
+	
 	@Override
 	public Class<?> getClass(String tableName) {
 		if (MLCOInvoiceWithholding.Table_Name.equals(tableName))
@@ -55,6 +57,10 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return X_LCO_WithholdingType.class;
 		if (MITSVoucherWithholding.Table_Name.equals(tableName))
 			return MITSVoucherWithholding.class;
+		if (MMunicipality.Table_Name.equals(tableName))
+			return MMunicipality.class;
+		if (MParish.Table_Name.equals(tableName))
+			return MParish.class;
 		return null;
 	}
 
@@ -78,6 +84,10 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return new X_LCO_WithholdingType(Env.getCtx(), Record_ID, trxName);
 		if (MITSVoucherWithholding.Table_Name.equals(tableName))
 			return new MITSVoucherWithholding(Env.getCtx(), Record_ID, trxName);
+		if (MMunicipality.Table_Name.equals(tableName))
+			return new MMunicipality(Env.getCtx(), Record_ID, trxName);
+		if (MParish.Table_Name.equals(tableName))
+			return new MParish(Env.getCtx(), Record_ID, trxName);
 		return null;
 	}
 
@@ -101,7 +111,10 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return new X_LCO_WithholdingType(Env.getCtx(), rs, trxName);
 		if (MITSVoucherWithholding.Table_Name.equals(tableName))
 			return new MITSVoucherWithholding(Env.getCtx(), rs, trxName);
+		if (MMunicipality.Table_Name.equals(tableName))
+			return new MMunicipality(Env.getCtx(), rs, trxName);
+		if (MParish.Table_Name.equals(tableName))
+			return new MParish(Env.getCtx(), rs, trxName);
 		return null;
 	}
-
 }
