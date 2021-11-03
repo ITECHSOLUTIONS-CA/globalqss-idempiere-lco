@@ -12,18 +12,23 @@
  ******************************************************************************/
 package dev.itechsolutions.webui.editor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 
 import org.adempiere.util.Callback;
 import org.adempiere.webui.LayoutUtils;
-import org.adempiere.webui.component.*;
 import org.adempiere.webui.component.Button;
 import org.adempiere.webui.component.Checkbox;
 import org.adempiere.webui.component.Column;
 import org.adempiere.webui.component.Columns;
+import org.adempiere.webui.component.ConfirmPanel;
 import org.adempiere.webui.component.Grid;
+import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Label;
+import org.adempiere.webui.component.ListItem;
 import org.adempiere.webui.component.Listbox;
 import org.adempiere.webui.component.Panel;
 import org.adempiere.webui.component.Row;
@@ -46,6 +51,7 @@ import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
 import org.compiere.util.Trx;
+import org.compiere.util.Util;
 //import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.Executions;
 
@@ -54,6 +60,7 @@ import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zk.ui.event.InputEvent;
 import org.zkoss.zul.Borderlayout;
 import org.zkoss.zul.Cell;
 import org.zkoss.zul.Center;
@@ -93,7 +100,8 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 	private Label lblMunicipality;
 	private Label lblParish;
 	
-
+	private Row pnlCity;
+	
 	private Textbox txtAddress1;
 	private Textbox txtAddress2;
 	private Textbox txtAddress3;
@@ -295,12 +303,11 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 		txtAddress4.setMaxlength(ITSMLocation.getFieldLength(ITSMLocation.COLUMNNAME_Address4));
 		
 		//autocomplete City
-		txtCity = new WAutoCompleterCity(m_WindowNo);
+		txtCity = new WAutoCompleterCity(m_WindowNo, this);
 		txtCity.setCols(20);
 		txtCity.setMaxlength(ITSMLocation.getFieldLength(ITSMLocation.COLUMNNAME_City));
 		txtCity.setAutodrop(true);
 		txtCity.setAutocomplete(true);
-		txtCity.addEventListener(Events.ON_CHANGING, this);
 		txtCity.addEventListener(Events.ON_SELECT, this);
 		//txtCity
 		
@@ -413,7 +420,7 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 		//txtAddress4.setHflex("1");
 		ZKUpdateUtil.setHflex(txtAddress4, "1");
 
-		Row pnlCity     = new Row();
+		pnlCity     = new Row();
 		pnlCity.appendChild(lblCity.rightAlign());
 		pnlCity.appendChild(txtCity);
 		//txtCity.setHflex("1");
@@ -666,7 +673,7 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 			else
 			{
 				lstMunicipality.setSelectedItem(null);
-				m_location.set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, 0);
+				m_location.set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, null);
 			}
 			s_oldRegion_ID = m_location.getC_Region_ID();
 		}
@@ -693,7 +700,7 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 			else
 			{
 				lstMunicipality.setSelectedItem(null);
-				m_location.set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, 0);
+				m_location.set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, null);
 			}
 			s_oldCity_ID = m_location.getC_City_ID();
 		}
@@ -758,7 +765,7 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 				addComponents((Row)txtAddress4.getParent());
 				isAddress4Mandatory = s.endsWith("!");
 			} else if (s.startsWith("C")) {
-				addComponents((Row)txtCity.getParent());
+				addComponents(pnlCity);
 				isCityMandatory = s.endsWith("!");
 			} else if (s.startsWith("MU")
 					&& m_location.isHasRegion() && m_location.isHasMunicipality()) {
@@ -835,8 +842,10 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 	private void setCity() {
 		
 		int C_City_ID = m_location.getC_City_ID();
+		String city = m_location.getCity();
 		
 		txtCity.setC_City_ID(C_City_ID);
+		txtCity.setText(city);
 	}
 	
 	/**
@@ -1138,7 +1147,7 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 			m_location.setRegion(r);
 			m_location.setC_City_ID(0);
 			m_location.setCity(null);
-			m_location.set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, 0);
+			m_location.set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, null);
 			m_location.setMunicipality(null);
 			txtCity.setText("");
 			//  refresh
@@ -1160,7 +1169,7 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 		}
 		//Added By Argenis Rodríguez
 		else if (event.getTarget().equals(txtCity))
-		{
+		{	
 			if (inCountryAction || inOKAction)
 				return ;
 			
@@ -1168,9 +1177,18 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 			
 			if (C_City_ID <= 0)
 			{
+				String city = null;
+				if (event instanceof InputEvent)
+				{
+					InputEvent input = (InputEvent) event;
+					city = input.getValue();
+				} else
+					city = txtCity.getValue();
+				
 				m_location.setC_City_ID(0);
-				m_location.setCity(null);
-				initLocation();
+				m_location.setCity(city);
+				changeMunicipality();
+				txtCity.focus();
 				return ;
 			}
 			
@@ -1178,7 +1196,7 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 			m_location.setC_City_ID(city.get_ID());
 			m_location.setCity(city.getName());
 			//refresh
-			initLocation();
+			changeMunicipality();
 			txtCity.focus();
 		}
 		else if ("onSaveError".equals(event.getName())) {
@@ -1187,7 +1205,37 @@ public class WLocationExtDialog extends Window implements EventListener<Event>
 			focus();			
 		}
 	}
-
+	
+	private void changeMunicipality() {
+		
+		//new City
+		//Added By Argenis Rodríguez
+		if (m_location.getC_City_ID() != s_oldCity_ID)
+		{
+			lstMunicipality.getChildren().clear();
+			lstMunicipality.appendItem("", null);
+			
+			lstParish.getChildren().clear();
+			lstParish.appendItem("", null);
+			
+			MMunicipality[] municipalities = m_location.getC_City_ID() > 0
+					? MMunicipality.getMunicipalities(MCity.get(m_location.getC_City_ID()))
+					: MMunicipality.getMunicipalities(m_location.getRegion());
+			
+			for (MMunicipality municipality: municipalities)
+				lstMunicipality.appendItem(municipality.getName(), municipality);
+			
+			if (m_location.get_ValueAsInt(MMunicipality.COLUMNNAME_C_Municipality_ID) > 0)
+				setMunicipality();
+			else
+			{
+				lstMunicipality.setSelectedItem(null);
+				m_location.set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, null);
+			}
+			s_oldCity_ID = m_location.getC_City_ID();
+		}
+	}
+	
 	// LCO - address 1, region and city required
 	private String validate_OK() {
 		String fields = "";

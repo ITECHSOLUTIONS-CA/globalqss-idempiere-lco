@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.adempiere.webui.component.Combobox;
+import org.zkoss.zk.ui.event.InputEvent;
 import org.zkoss.zul.Comboitem;
 
 /**
@@ -52,7 +53,22 @@ public class AutoComplete extends Combobox
 	private Object[] values;
 
 	private HashMap<Comboitem, String> mapItems = new HashMap<Comboitem, String>();
-
+	
+	/**
+	 * Event handler responsible to reducing number of items
+	 * Method is invoked each time something is typed in the combobox
+	 * 
+	 * @param evt	The event
+	 */
+	
+	public void onChanging(InputEvent evt) 
+	{
+		if (!evt.isChangingBySelectBack())
+		{
+			refresh(evt.getValue());
+		}
+	}
+	
 	/**
 	 * Set menu labels
 	 * 

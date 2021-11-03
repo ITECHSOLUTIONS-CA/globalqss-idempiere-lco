@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DBException;
 import org.compiere.grid.ed.CityVO;
 import org.compiere.model.MSysConfig;
@@ -32,6 +33,7 @@ import org.zkoss.zk.ui.event.InputEvent;
 import org.zkoss.zul.Timer;
 
 import dev.itechsolutions.webui.component.AutoComplete;
+import dev.itechsolutions.webui.editor.WLocationExtDialog;
 
 
 
@@ -61,11 +63,14 @@ public class WAutoCompleterCity extends AutoComplete implements EventListener<Ev
 	
 	private final int m_windowNo;
 	
-	public WAutoCompleterCity(int m_windowNo)
+	private WLocationExtDialog locationDialog;
+	
+	public WAutoCompleterCity(int m_windowNo
+			, WLocationExtDialog locationDialog)
 	{ 
 		super();
 		this.m_windowNo = m_windowNo;
-		this.addEventListener(Events.ON_CHANGING, this);
+		this.locationDialog = locationDialog;
 		this.addEventListener(Events.ON_SELECT, this);
 	}
 	
@@ -73,6 +78,20 @@ public class WAutoCompleterCity extends AutoComplete implements EventListener<Ev
 	{
 		timer.setRepeats(false);
 		timer.start();
+	}
+	
+	@Override
+	public void onChanging(InputEvent evt) 
+	{
+		showPopupDelayed();
+		refreshData(evt.getValue());
+		super.onChanging(evt);
+		
+		try {
+			locationDialog.onEvent(evt);
+		} catch (Exception e) {
+			throw new AdempiereException(e.getLocalizedMessage(), e);
+		}
 	}
 	
 	@Override
@@ -88,7 +107,6 @@ public class WAutoCompleterCity extends AutoComplete implements EventListener<Ev
 		if (m_city != null && m_city.CityName.compareTo(search) != 0)
 		{
 			setCity(null);
-			setText("");
 		}
 		m_citiesShow.clear();
 		this.removeAllItems();
@@ -275,11 +293,6 @@ public class WAutoCompleterCity extends AutoComplete implements EventListener<Ev
 				Env.setContext(Env.getCtx(), m_windowNo, Env.TAB_INFO, "C_Region_ID", String.valueOf(city.get().C_Region_ID));
 				this.setText(city.get().CityName);
 			}
-		}
-		else if (Events.ON_CHANGING.equals(event.getName()))
-		{
-			InputEvent inputEvent = (InputEvent) event;
-			changeValue(inputEvent.getValue(), inputEvent.isChangingBySelectBack());
 		}
 	}
 }

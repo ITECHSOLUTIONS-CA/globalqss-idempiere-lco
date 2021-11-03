@@ -151,7 +151,7 @@ public class WLocationExtEditor extends WEditor implements EventListener<Event>,
     
     public ITSMLocation getLocation (int C_Location_ID, String trxName)
 	{
-    	m_value = ITSMLocation.get(Env.getCtx(), C_Location_ID, trxName);
+    	m_value = ITSMLocation.getCopy(Env.getCtx(), C_Location_ID, trxName);
 		return m_value;
 	}
     

@@ -133,7 +133,7 @@ public final class MLocationLookupExt extends Lookup
 	 */
 	public ITSMLocation getLocation (int C_Location_ID, String trxName)
 	{
-		return (ITSMLocation) ITSMLocation.get(m_ctx, C_Location_ID, trxName);
+		return ITSMLocation.get(m_ctx, C_Location_ID, trxName);
 	}	//	getC_Location_ID
 
 	/**

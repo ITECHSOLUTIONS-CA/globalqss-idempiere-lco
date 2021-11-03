@@ -158,6 +158,24 @@ public class ITSMLocation extends MLocation {
 	}
 	
 	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param ctx
+	 * @param C_Location_ID
+	 * @param trxName
+	 * @return
+	 */
+	public static ITSMLocation getCopy(Properties ctx, int C_Location_ID, String trxName) {
+		
+		ITSMLocation loc = get(C_Location_ID, trxName);
+		
+		if (loc != null && loc.get_ID() > 0)
+			loc = new ITSMLocation(ctx, loc, trxName);
+		
+		return loc;
+	}
+	
+	/**
 	 * @author Argenis Rodríguez
 	 * @param requery
 	 * @return
@@ -238,7 +256,7 @@ public class ITSMLocation extends MLocation {
 		
 		if (municipality == null)
 		{
-			set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, 0);
+			set_ValueOfColumn(MMunicipality.COLUMNNAME_C_Municipality_ID, null);
 			setParish(null);
 		}
 		else
@@ -262,7 +280,7 @@ public class ITSMLocation extends MLocation {
 		m_p = parish;
 		
 		if (parish == null)
-			set_ValueOfColumn(MParish.COLUMNNAME_C_Parish_ID, 0);
+			set_ValueOfColumn(MParish.COLUMNNAME_C_Parish_ID, null);
 		else
 		{
 			set_ValueOfColumn(MParish.COLUMNNAME_C_Parish_ID, parish.get_ID());
