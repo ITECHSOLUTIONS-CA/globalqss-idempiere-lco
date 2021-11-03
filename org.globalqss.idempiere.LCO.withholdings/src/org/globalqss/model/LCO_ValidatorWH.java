@@ -60,6 +60,7 @@ import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
+import org.compiere.util.Util;
 import org.osgi.service.event.Event;
 
 /**
@@ -71,14 +72,14 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 {
 	/**	Logger			*/
 	private static CLogger log = CLogger.getCLogger(LCO_ValidatorWH.class);
-
+	
 	/**
 	 *	Initialize Validation
 	 */
 	@Override
 	protected void initialize() {
 		log.warning("");
-
+		
 		//	Tables to be monitored
 		registerTableEvent(IEventTopics.PO_BEFORE_CHANGE, MInvoice.Table_Name);
 		registerTableEvent(IEventTopics.PO_BEFORE_NEW, MInvoiceLine.Table_Name);
@@ -86,7 +87,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		registerTableEvent(IEventTopics.PO_BEFORE_DELETE, MInvoiceLine.Table_Name);
 		registerTableEvent(IEventTopics.PO_BEFORE_NEW, X_LCO_WithholdingCalc.Table_Name);
 		registerTableEvent(IEventTopics.PO_BEFORE_CHANGE, X_LCO_WithholdingCalc.Table_Name);
-
+		
 		//	Documents to be monitored
 		registerTableEvent(IEventTopics.DOC_BEFORE_PREPARE, MInvoice.Table_Name);
 		registerTableEvent(IEventTopics.DOC_BEFORE_COMPLETE, MInvoice.Table_Name);
@@ -102,10 +103,10 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		registerTableEvent(IEventTopics.DOC_BEFORE_VOID, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSEACCRUAL, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSECORRECT, MAllocationHdr.Table_Name);
-
+		
 		registerEvent(IEventTopics.AFTER_LOGIN);
 	}	//	initialize
-
+	
     /**
      *	Model Change of a monitored Table or Document
      *  @param event
@@ -114,7 +115,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 	@Override
 	protected void doHandleEvent(Event event) {
 		String type = event.getTopic();
-
+		
 		if (type.equals(IEventTopics.AFTER_LOGIN)) {
 			log.info("Type: " + type);
 			// on login set context variable #LCO_USE_WITHHOLDINGS
@@ -123,10 +124,10 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			Env.setContext(Env.getCtx(), "#LCO_USE_WITHHOLDINGS", useWH);
 			return;
 		}
-
+		
 		if (! MSysConfig.getBooleanValue("LCO_USE_WITHHOLDINGS", true, Env.getAD_Client_ID(Env.getCtx())))
 			return;
-
+		
 		PO po = null;
 		if (type.equals(IEventTopics.ACCT_FACTS_VALIDATE)) {
 			FactsEventData fed = getEventData(event);
@@ -136,14 +137,14 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		}
 		log.info(po.get_TableName() + " Type: "+type);
 		String msg;
-
+		
 		// Model Events
 		if (po instanceof MInvoice && type.equals(IEventTopics.PO_BEFORE_CHANGE)) {
 			msg = clearInvoiceWithholdingAmtFromInvoice((MInvoice) po);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
+		
 		// when invoiceline is changed clear the withholding amount on invoice
 		// in order to force a regeneration
 		if (po instanceof MInvoiceLine &&
@@ -154,17 +155,17 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			)
 		{
 			msg = clearInvoiceWithholdingAmtFromInvoiceLine((MInvoiceLine) po, type);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
+		
 		if (po instanceof X_LCO_WithholdingCalc
 				&& (type.equals(IEventTopics.PO_BEFORE_CHANGE) || type.equals(IEventTopics.PO_BEFORE_NEW))) {
 			X_LCO_WithholdingCalc lwc = (X_LCO_WithholdingCalc) po;
 			if (lwc.isCalcOnInvoice() && lwc.isCalcOnPayment())
 				lwc.setIsCalcOnPayment(false);
 		}
-
+		
 		// Document Events
 		// before preparing a reversal invoice add the invoice withholding taxes
 		if (po instanceof MInvoice
@@ -172,7 +173,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			MInvoice inv = (MInvoice) po;
 			if (inv.isReversal()) {
 				int invid = inv.getReversal_ID();
-
+				
 				if (invid > 0) {
 					MInvoice invreverted = new MInvoice(inv.getCtx(), invid, inv.get_TrxName());
 					String sql =
@@ -212,7 +213,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				}
 			}
 		}
-
+		
 		// before preparing invoice validate if withholdings has been generated
 		if (po instanceof MInvoice
 				&& type.equals(IEventTopics.DOC_BEFORE_PREPARE)) {
@@ -239,49 +240,49 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				}
 			}
 		}
-
+		
 		// after preparing invoice move invoice withholdings to taxes and recalc grandtotal of invoice
 		if (po instanceof MInvoice && type.equals(IEventTopics.DOC_BEFORE_COMPLETE)) {
 			msg = translateWithholdingToTaxes((MInvoice) po);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
+		
 		// after completing the invoice fix the dates on withholdings and mark the invoice withholdings as processed
 		if (po instanceof MInvoice && type.equals(IEventTopics.DOC_AFTER_COMPLETE)) {
 			msg = completeInvoiceWithholding((MInvoice) po);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
+		
 		// before completing the payment - validate that writeoff amount must be greater than sum of payment withholdings
 		if (po instanceof MPayment && type.equals(IEventTopics.DOC_BEFORE_COMPLETE)) {
 			msg = validateWriteOffVsPaymentWithholdings((MPayment) po);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
+		
 		// after completing the allocation - complete the payment withholdings
 		if (po instanceof MAllocationHdr && type.equals(IEventTopics.DOC_AFTER_COMPLETE)) {
 			msg = completePaymentWithholdings((MAllocationHdr) po);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
+		
 		// before posting the allocation - post the payment withholdings vs writeoff amount
 		if (po instanceof MAllocationHdr && type.equals(IEventTopics.ACCT_FACTS_VALIDATE)) {
 			msg = accountingForInvoiceWithholdingOnPayment((MAllocationHdr) po, event);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
+		
 		// after completing the allocation - complete the payment withholdings
 		if (po instanceof MAllocationHdr
 				&& (type.equals(IEventTopics.DOC_AFTER_VOID) ||
 					type.equals(IEventTopics.DOC_AFTER_REVERSECORRECT) ||
 					type.equals(IEventTopics.DOC_AFTER_REVERSEACCRUAL))) {
 			msg = reversePaymentWithholdings((MAllocationHdr) po);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
 		
@@ -585,7 +586,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 
 			MAllocationLine[] alloc_lines = ah.getLines(false);
 			for (int j = 0; j < alloc_lines.length; j++) {
-				BigDecimal tottax = new BigDecimal(0);
+				BigDecimal tottax = BigDecimal.ZERO;
 
 				MAllocationLine alloc_line = alloc_lines[j];
 				DocLine_Allocation docLine = new DocLine_Allocation(alloc_line, doc);

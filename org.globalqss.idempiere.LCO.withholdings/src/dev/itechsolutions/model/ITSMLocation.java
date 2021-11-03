@@ -5,10 +5,16 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.compiere.model.MAccount;
+import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MCountry;
 import org.compiere.model.MLocation;
 import org.compiere.model.MRegion;
+import org.compiere.model.MSysConfig;
+import org.compiere.model.PO;
+import org.compiere.util.DB;
 import org.compiere.util.Env;
+import org.compiere.util.Msg;
 import org.idempiere.cache.ImmutablePOCache;
 
 import dev.itechsolutions.util.ColumnUtils;
@@ -383,5 +389,104 @@ public class ITSMLocation extends MLocation {
 		
 		return Arrays.stream(MMunicipality.getMunicipalities(region))
 				.anyMatch(municipality -> municipality.get_ID() == C_Municipality_ID);
+	}
+	
+	@Override
+	protected boolean beforeSave(boolean newRecord) {
+		
+		MCountry m_c = getCountry();
+		
+		if (getAD_Org_ID() != 0)
+			setAD_Org_ID(0);
+		//	Region Check
+		if (getC_Region_ID() != 0)
+		{
+			if (m_c == null || m_c.getC_Country_ID() != getC_Country_ID())
+				getCountry();
+			if (!m_c.isHasRegion())
+				setC_Region_ID(0);
+		} else {
+			setRegionName(null);
+		}
+		if (getC_City_ID() <= 0 && getCity() != null && getCity().length() > 0) {
+			int city_id = DB.getSQLValue(
+					get_TrxName(),
+					"SELECT C_City_ID FROM C_City WHERE C_Country_ID=? AND COALESCE(C_Region_ID,0)=? AND Name=? AND AD_Client_ID IN (0,?)",
+					new Object[] {getC_Country_ID(), getC_Region_ID(), getCity(), getAD_Client_ID()});
+			if (city_id > 0)
+				setC_City_ID(city_id);
+		}
+		
+		//check city
+		if (m_c != null && !m_c.isAllowCitiesOutOfList() && getC_City_ID()<=0) {
+			log.saveError("CityNotFound", Msg.translate(getCtx(), "CityNotFound"));
+			return false;
+		}
+		
+		//check city id
+		if (m_c != null && !m_c.isAllowCitiesOutOfList() && getC_City_ID() > 0) {
+			int city_id = DB.getSQLValue(get_TrxName(),
+										"SELECT C_City_ID "+
+										"  FROM C_City "+
+										" WHERE C_Country_ID=? "+
+										"   AND COALESCE(C_Region_ID,0)=? " +
+										"   AND C_City_ID =?",
+										new Object[] {getC_Country_ID(), getC_Region_ID(), getC_City_ID()});
+			
+			if (city_id<0){
+			    log.saveError("CityNotFound",Msg.translate(getCtx(), "CityNotFound")+" C_City_ID["+getC_City_ID()+"]");
+			    return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	@Override
+	protected boolean afterSave(boolean newRecord, boolean success) {
+		
+		if (!success)
+			return success;
+		//	Value/Name change in Account
+		if (!newRecord
+			&& ("Y".equals(Env.getContext(getCtx(), "$Element_LF")) 
+				|| "Y".equals(Env.getContext(getCtx(), "$Element_LT")))
+			&& (is_ValueChanged("Postal") || is_ValueChanged("City"))
+			){
+			StringBuilder msgup = new StringBuilder(
+					"(C_LocFrom_ID=").append(getC_Location_ID()) 
+					.append(" OR C_LocTo_ID=").append(getC_Location_ID()).append(")");
+			MAccount.updateValueDescription(getCtx(), msgup.toString(), get_TrxName());
+		}
+		
+		//Update BP_Location name IDEMPIERE 417
+		if (get_TrxName().startsWith(PO.LOCAL_TRX_PREFIX)) { // saved without trx
+			int bplID = DB.getSQLValueEx(get_TrxName(), updateBPLocName, getC_Location_ID());
+			if (bplID>0)
+			{
+				// just trigger BPLocation name change when the location change affects the name:
+				// START_VALUE_BPLOCATION_NAME
+				// 0 - City
+				// 1 - City + Address1
+				// 2 - City + Address1 + Address2
+				// 3 - City + Address1 + Address2 + Region
+				// 4 - City + Address1 + Address2 + Region + ID
+				int bplocname = MSysConfig.getIntValue(MSysConfig.START_VALUE_BPLOCATION_NAME, 0, getAD_Client_ID(), getAD_Org_ID());
+				if (bplocname < 0 || bplocname > 4)
+					bplocname = 0;
+				if (   is_ValueChanged(COLUMNNAME_City)
+					|| is_ValueChanged(COLUMNNAME_C_City_ID)
+					|| (bplocname >= 1 && is_ValueChanged(COLUMNNAME_Address1))
+					|| (bplocname >= 2 && is_ValueChanged(COLUMNNAME_Address2))
+					|| (bplocname >= 3 && (is_ValueChanged(COLUMNNAME_RegionName) || is_ValueChanged(COLUMNNAME_C_Region_ID)))
+					) {
+					MBPartnerLocation bpl = new MBPartnerLocation(getCtx(), bplID, get_TrxName());
+					bpl.setName(bpl.getBPLocName(this));
+					bpl.saveEx();
+				}
+			}
+		}
+		
+		return success;
 	}
 }

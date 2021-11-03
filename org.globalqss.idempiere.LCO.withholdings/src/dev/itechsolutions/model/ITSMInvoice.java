@@ -17,7 +17,6 @@ import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MInvoiceBatch;
 import org.compiere.model.MInvoiceBatchLine;
-import org.compiere.model.MLocation;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrgInfo;
 import org.compiere.model.MPriceList;
@@ -165,7 +164,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 			rs = null; pstmt = null;
 		}
 		
-		return invoices.toArray(new ITSMInvoice[invoices.size()]);
+		return invoices.toArray(ITSMInvoice[]::new);
 	}
 	
 	@Override
@@ -174,32 +173,35 @@ public class ITSMInvoice extends LCO_MInvoice {
 	}
 	
 	public int recalcWithholdings(MITSVoucherWithholding voucher) {
-		if (! MSysConfig.getBooleanValue("LCO_USE_WITHHOLDINGS", true, Env.getAD_Client_ID(Env.getCtx())))
+		if (! MSysConfig.getBooleanValue(ColumnUtils.SYSCONFIG_LCO_USE_WITHHOLDINGS
+				, true, Env.getAD_Client_ID(Env.getCtx())))
 			return 0;
 		
 		MDocType dt = new MDocType(getCtx(), getC_DocTypeTarget_ID(), get_TrxName());
-		String genwh = dt.get_ValueAsString("GenerateWithholding");
-		if (genwh == null || genwh.equals("N"))
+		String genwh = dt.get_ValueAsString(ColumnUtils.COLUMNNAME_GenerateWithholding);
+		if (genwh == null || genwh.equals(ColumnUtils.GenerateWithholding_No))
 			return 0;
 		
 		int noins = 0;
 		log.info("");
-		BigDecimal totwith = new BigDecimal("0");
+		BigDecimal totwith = BigDecimal.ZERO;
 		
 		// Fill variables normally needed
 		// BP variables
 		MBPartner bp = new MBPartner(getCtx(), getC_BPartner_ID(), get_TrxName());
-		int bp_isic_id = bp.get_ValueAsInt("LCO_ISIC_ID");
-		int bp_taxpayertype_id = bp.get_ValueAsInt("LCO_TaxPayerType_ID");
+		int bp_isic_id = bp.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_ISIC_ID);
+		int bp_taxpayertype_id = bp.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_TaxPayerType_ID);
 		MBPartnerLocation mbpl = new MBPartnerLocation(getCtx(), getC_BPartner_Location_ID(), get_TrxName());
-		MLocation bpl = MLocation.get(getCtx(), mbpl.getC_Location_ID(), get_TrxName());
+		ITSMLocation bpl = ITSMLocation.getCopy(getCtx(), mbpl.getC_Location_ID(), get_TrxName());
 		int bp_city_id = bpl.getC_City_ID();
+		int bp_Municipality_ID = bpl.get_ValueAsInt(I_C_Municipality.COLUMNNAME_C_Municipality_ID);
 		// OrgInfo variables
 		MOrgInfo oi = MOrgInfo.get(getCtx(), getAD_Org_ID(), get_TrxName());
-		int org_isic_id = oi.get_ValueAsInt("LCO_ISIC_ID");
-		int org_taxpayertype_id = oi.get_ValueAsInt("LCO_TaxPayerType_ID");
-		MLocation ol = MLocation.get(getCtx(), oi.getC_Location_ID(), get_TrxName());
+		int org_isic_id = oi.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_ISIC_ID);
+		int org_taxpayertype_id = oi.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_TaxPayerType_ID);
+		ITSMLocation ol = ITSMLocation.getCopy(getCtx(), oi.getC_Location_ID(), get_TrxName());
 		int org_city_id = ol.getC_City_ID();
+		int org_Municipality_ID = ol.get_ValueAsInt(I_C_Municipality.COLUMNNAME_C_Municipality_ID);
 		
 		List<Object> params = new ArrayList<Object>();
 		String where = "IsSOTrx = ?";
@@ -235,7 +237,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 			
 			// For each applicable withholding
 			log.info("Withholding Type: "+wt.getLCO_WithholdingType_ID()+"/"+wt.getName());
-
+			
 			X_LCO_WithholdingRuleConf wrc = new Query(getCtx(),
 					X_LCO_WithholdingRuleConf.Table_Name,
 					"LCO_WithholdingType_ID=?",
@@ -243,17 +245,28 @@ public class ITSMInvoice extends LCO_MInvoice {
 					.setOnlyActiveRecords(true)
 					.setParameters(wt.getLCO_WithholdingType_ID())
 					.first();
+			
 			if (wrc == null) {
 				log.warning("No LCO_WithholdingRuleConf for LCO_WithholdingType = "+wt.getLCO_WithholdingType_ID());
 				continue;
 			}
-
+			
 			// look for applicable rules according to config fields (rule)
 			StringBuffer wherer = new StringBuffer(" LCO_WithholdingType_ID=? AND ValidFrom<=? ");
 			List<Object> paramsr = new ArrayList<Object>();
 			paramsr.add(wt.getLCO_WithholdingType_ID());
 			paramsr.add(getDateInvoiced());
 			if (wrc.isUseBPISIC()) {
+				
+				String validMunicipality = oi.get_ValueAsString(ColumnUtils.COLUMNNAME_ValidMunicipality);
+				
+				if (ColumnUtils.ValidMunicipality_None.equals(validMunicipality)
+						|| (ColumnUtils.ValidMunicipality_Local.equals(validMunicipality)
+								&& bp_Municipality_ID != org_Municipality_ID)
+						|| (ColumnUtils.ValidMunicipality_Outsiders.equals(validMunicipality)
+								&& bp_Municipality_ID == org_Municipality_ID))
+					continue;
+				
 				wherer.append(" AND LCO_BP_ISIC_ID=? ");
 				paramsr.add(bp_isic_id);
 			}
@@ -281,7 +294,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 				if (org_city_id <= 0)
 					log.warning("Possible configuration error org city is used but not set");
 			}
-
+			
 			// Add withholding categories of lines
 			if (wrc.isUseWithholdingCategory()) {
 				// look the conf fields
@@ -308,7 +321,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 				if (addedlines)
 					wherer.append(") ");
 			}
-
+			
 			// Add tax categories of lines
 			if (wrc.isUseProductTaxCategory()) {
 				// look the conf fields
@@ -335,11 +348,12 @@ public class ITSMInvoice extends LCO_MInvoice {
 				if (addedlines)
 					wherer.append(") ");
 			}
-
+			
 			List<X_LCO_WithholdingRule> wrs = new Query(getCtx(), X_LCO_WithholdingRule.Table_Name, wherer.toString(), get_TrxName())
 				.setOnlyActiveRecords(true)
 				.setParameters(paramsr)
 				.list();
+			
 			for (X_LCO_WithholdingRule wr : wrs)
 			{
 				// for each applicable rule
@@ -349,20 +363,20 @@ public class ITSMInvoice extends LCO_MInvoice {
 					log.severe("Rule without calc " + wr.getLCO_WithholdingRule_ID());
 					continue;
 				}
-
+				
 				// bring record for tax
 				MTax tax = new MTax(getCtx(), wc.getC_Tax_ID(), get_TrxName());
-
+				
 				log.info("WithholdingRule: "+wr.getLCO_WithholdingRule_ID()+"/"+wr.getName()
 						+" BaseType:"+wc.getBaseType()
 						+" Calc: "+wc.getLCO_WithholdingCalc_ID()+"/"+wc.getName()
 						+" CalcOnInvoice:"+wc.isCalcOnInvoice()
 						+" Tax: "+tax.getC_Tax_ID()+"/"+tax.getName());
-
+				
 				// calc base
 				// apply rule to calc base
 				BigDecimal base = null;
-
+				
 				if (wc.getBaseType() == null) {
 					log.severe("Base Type null in calc record "+wr.getLCO_WithholdingCalc_ID());
 				} else if (wc.getBaseType().equals(X_LCO_WithholdingCalc.BASETYPE_Document)) {
@@ -460,6 +474,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 				}
 				log.info("Base: "+base+ " Thresholdmin:"+wc.getThresholdmin());
 				
+				//Validate Currency of Voucher for Conversion
 				if (base != null && voucher != null
 						&& getC_Currency_ID() != voucher.getC_Currency_ID())
 				{
@@ -520,11 +535,10 @@ public class ITSMInvoice extends LCO_MInvoice {
 					log.info("LCO_InvoiceWithholding saved:"+iwh.getTaxAmt());
 				}
 			} // while each applicable rule
-
 		} // while type
 		LCO_MInvoice.updateHeaderWithholding(getC_Invoice_ID(), get_TrxName());
 		saveEx();
-
+		
 		return noins;
 	}
 }
