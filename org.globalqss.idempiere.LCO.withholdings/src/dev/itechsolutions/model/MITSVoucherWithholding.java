@@ -363,6 +363,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 	private String reverseAllocations() {
 		
 		int lastC_Currency_ID = -1;
+		int lastAD_Org_ID = -1;
 		MAllocationHdr alloc = null;
 		
 		getLines(true);
@@ -370,19 +371,23 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		for (MLCOInvoiceWithholding line: m_lines)
 		{
 			int C_Currency_ID = line.getC_Invoice().getC_Currency_ID();
+			int AD_Org_ID = line.getC_Invoice().getAD_Org_ID();
 			
 			if (line.getC_AllocationLine_ID() <= 0)
 				continue;
 			
-			if (alloc == null || lastC_Currency_ID != C_Currency_ID)
+			if (alloc == null
+					|| lastC_Currency_ID != C_Currency_ID
+					|| lastAD_Org_ID != AD_Org_ID)
 			{
 				if (alloc != null
-						&& alloc.processIt(MAllocationHdr.DOCACTION_Reverse_Correct))
+						&& !alloc.processIt(MAllocationHdr.DOCACTION_Reverse_Correct))
 					return alloc.getProcessMsg();
 				
 				alloc = (MAllocationHdr) line.getC_AllocationLine().getC_AllocationHdr();
 				
 				lastC_Currency_ID = C_Currency_ID;
+				lastAD_Org_ID = AD_Org_ID;
 			}
 			
 			line.setC_AllocationLine_ID(0);
