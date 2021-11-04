@@ -42,7 +42,7 @@ import dev.itechsolutions.util.ColumnUtils;
  *
  */
 public class ITSMInvoice extends LCO_MInvoice {
-
+	
 	/**
 	 * 
 	 */

@@ -20,6 +20,7 @@ import org.compiere.process.DocAction;
 import org.compiere.process.DocOptions;
 import org.compiere.process.DocumentEngine;
 import org.compiere.util.DB;
+import org.compiere.util.Msg;
 import org.compiere.util.Util;
 import org.globalqss.model.MLCOInvoiceWithholding;
 
@@ -81,7 +82,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 				.addJoinClause("INNER JOIN C_Invoice ci ON ci.C_Invoice_ID = LCO_InvoiceWithholding.C_Invoice_ID")
 				.setOnlyActiveRecords(true)
 				.setParameters(get_ID())
-				.setOrderBy("ci." + MInvoice.COLUMNNAME_C_Currency_ID)
+				.setOrderBy("ci." + MInvoice.COLUMNNAME_C_Currency_ID + ", ci." + MInvoice.COLUMNNAME_AD_Org_ID)
 				.list();
 		
 		m_lines = lines.toArray(new MLCOInvoiceWithholding[lines.size()]);
@@ -186,11 +187,13 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		
 		getLines(true);
 		int lastC_Currency_ID = -1;
+		int lastAD_Org_ID = -1;
 		MAllocationHdr allocation = null;
 		
 		for (MLCOInvoiceWithholding line: m_lines)
 		{
 			int C_Currency_ID = line.getC_Invoice().getC_Currency_ID();
+			int AD_Org_ID = line.getC_Invoice().getAD_Org_ID();
 			
 			line.setDocumentNo(getDocumentNo());
 			line.setDateTrx(getDateTrx());
@@ -199,9 +202,12 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			
 			if (!line.isCalcOnInvoice() && !line.isCalcOnPayment())
 			{
-				if (allocation == null || C_Currency_ID != lastC_Currency_ID)
+				if (allocation == null
+						|| C_Currency_ID != lastC_Currency_ID
+						|| AD_Org_ID != lastAD_Org_ID)
 				{
 					lastC_Currency_ID = C_Currency_ID;
+					lastAD_Org_ID = AD_Org_ID;
 					
 					if (allocation != null
 							&& !allocation.processIt(MAllocationHdr.ACTION_Complete))
@@ -210,7 +216,8 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 						return STATUS_Invalid;
 					}
 					
-					allocation = createAllocation(C_DocTypeAllocation_ID, C_Currency_ID);
+					allocation = createAllocation(C_DocTypeAllocation_ID
+							, C_Currency_ID, AD_Org_ID);
 				}
 				
 				MInvoice invoice = line.getC_Invoice();
@@ -281,14 +288,18 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 	}
 	
 	/**
+	 * 
 	 * @author Argenis Rodríguez
 	 * @param C_DocType_ID
+	 * @param C_Currency_ID
+	 * @param AD_Org_ID
 	 * @return
 	 */
-	private MAllocationHdr createAllocation(int C_DocType_ID, int C_Currency_ID) {
+	private MAllocationHdr createAllocation(int C_DocType_ID
+			, int C_Currency_ID, int AD_Org_ID) {
 		
 		MAllocationHdr allocation = new MAllocationHdr(getCtx(), 0, get_TrxName());
-		allocation.setAD_Org_ID(getAD_Org_ID());
+		allocation.setAD_Org_ID(AD_Org_ID);
 		allocation.setDateTrx(getDateTrx());
 		allocation.setDateAcct(getDateAcct());
 		allocation.setC_DocType_ID(C_DocType_ID);
@@ -564,5 +575,34 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			docType = (MDocType) super.getC_DocType();
 		
 		return docType;
+	}
+	
+	@Override
+	protected boolean beforeSave(boolean newRecord) {
+		
+		//Validate Invoice
+		if ((newRecord
+				|| is_ValueChanged(COLUMNNAME_C_Invoice_ID))
+				 && getC_Invoice_ID() > 0)
+		{
+			StringBuilder sql = new StringBuilder("SELECT vw.DocumentNo")
+					.append(" FROM ITS_VoucherWithholding vw")
+					.append(" INNER JOIN LCO_InvoiceWithholding iw ON iw.ITS_VoucherWithholding_ID = vw.ITS_VoucherWithholding_ID")
+					.append(" WHERE iw.C_Invoice_ID = ?")
+					.append(" AND vw.DocStatus NOT IN ('VO', 'RE')")
+					.append(" AND vw.LCO_WithholdingType_ID = ?");
+			
+			String voucher = DB.getSQLValueString(get_TrxName(), sql.toString()
+					, getC_Invoice_ID(), getLCO_WithholdingType_ID());
+			
+			if (!Util.isEmpty(voucher, true))
+			{
+				log.saveError("Error", Msg.getMsg(getCtx(), "InvoiceInVoucher"
+						, new Object[] {voucher}));
+				return false;
+			}
+		}
+		
+		return true;
 	}
 }
