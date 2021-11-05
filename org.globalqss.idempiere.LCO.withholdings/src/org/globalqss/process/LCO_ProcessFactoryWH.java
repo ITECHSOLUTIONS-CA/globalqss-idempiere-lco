@@ -29,6 +29,7 @@ import org.adempiere.base.IProcessFactory;
 import org.compiere.process.ProcessCall;
 
 import dev.itechsolutions.process.GenerateInvoiceWithholding;
+import dev.itechsolutions.process.GenerateTaxDeclare;
 
 public class LCO_ProcessFactoryWH implements IProcessFactory {
 
@@ -48,8 +49,13 @@ public class LCO_ProcessFactoryWH implements IProcessFactory {
 		{
 			try {
 				process = GenerateInvoiceWithholding.class.getConstructor().newInstance();
-			} catch (Exception e) {
-			}
+			} catch (Exception e) {}
+		}
+		else if (GenerateTaxDeclare.class.getCanonicalName().equals(className))
+		{
+			try {
+				process = GenerateTaxDeclare.class.getDeclaredConstructor().newInstance();
+			} catch (Exception e) {}
 		}
 		
 		return process;

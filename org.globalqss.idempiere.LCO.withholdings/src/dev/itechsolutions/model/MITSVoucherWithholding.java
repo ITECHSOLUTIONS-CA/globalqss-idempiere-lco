@@ -85,7 +85,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 				.setOrderBy("ci." + MInvoice.COLUMNNAME_C_Currency_ID + ", ci." + MInvoice.COLUMNNAME_AD_Org_ID)
 				.list();
 		
-		m_lines = lines.toArray(new MLCOInvoiceWithholding[lines.size()]);
+		m_lines = lines.toArray(MLCOInvoiceWithholding[]::new);
 		
 		return m_lines;
 	}
