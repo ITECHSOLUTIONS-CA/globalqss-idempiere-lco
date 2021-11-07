@@ -14,7 +14,6 @@ package dev.itechsolutions.editor.factory;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.logging.Level;
 
 import org.adempiere.base.IDisplayTypeFactory;
 import org.compiere.util.*;

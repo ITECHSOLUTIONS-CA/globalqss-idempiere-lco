@@ -288,9 +288,9 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		
 		//Added By Argenis Rodríguez
 		if (MAllocationHdr.Table_Name.equals(po.get_TableName())
-				&& (IEventTopics.DOC_BEFORE_VOID.equals(type))
+				&& (IEventTopics.DOC_BEFORE_VOID.equals(type)
 					|| IEventTopics.DOC_BEFORE_REVERSEACCRUAL.equals(type)
-					|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type))
+					|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type)))
 			validateAllocationBeforeVoid((MAllocationHdr) po);
 	}	//	doHandleEvent
 	
@@ -415,17 +415,27 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			// validate vs invoice of payment
 			BigDecimal wo = pay.getWriteOffAmt();
 			BigDecimal sumwhamt = Env.ZERO;
-			sumwhamt = DB.getSQLValueBD(
-					pay.get_TrxName(),
-					"SELECT COALESCE (SUM (iw.TaxAmt), 0) " +
-					"FROM LCO_InvoiceWithholding iw " +
-					"LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = iw.ITS_VoucherWithholding_ID " +
-					"WHERE iw.C_Invoice_ID = ? AND " +
-					"iw.IsActive = 'Y' AND " +
-					"iw.IsCalcOnPayment = 'Y' AND " +
-					"CASE WHEN iw.ITS_VoucherWithholding_ID IS NOT NULL THEN vw.DocStatus = 'CO' ELSE iw.Processed = 'N' END AND " +
-					"C_AllocationLine_ID IS NULL",
-					pay.getC_Invoice_ID());
+			
+			StringBuilder sql = new StringBuilder("SELECT COALESCE(SUM(")
+						.append("CASE")
+							.append(" WHEN vw.ITS_VoucherWithholding_ID IS NOT NULL THEN")
+								.append(" currencyConvert(iw.TaxAmt, vw.C_Currency_ID")
+								.append(", ci.C_Currency_ID, ci.DateInvoiced")
+								.append(", vw.C_ConversionType_ID, vw.AD_Client_ID, vw.AD_Org_ID)")
+							.append(" ELSE")
+								.append(" iw.TaxAmt")
+						.append(" END")
+					.append("), 0)")
+					.append(" FROM LCO_InvoiceWithholding iw")
+					.append(" INNER JOIN C_Invoice ci ON ci.C_Invoice_ID = iw.C_Invoice_ID")
+					.append(" LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = iw.ITS_VoucherWithholding_ID")
+					.append(" WHERE iw.C_Invoice_ID = ? AND iw.IsActive = 'Y'")
+					.append(" AND iw.IsCalcOnPayment = 'Y'")
+					.append(" AND CASE WHEN iw.ITS_VoucherWithholding_ID IS NOT NULL THEN vw.DocStatus = 'CO' ELSE iw.Processed = 'N' END")
+					.append(" AND C_AllocationLine_ID IS NULL");
+			
+			sumwhamt = DB.getSQLValueBD(pay.get_TrxName(), sql.toString(), pay.getC_Invoice_ID());
+			
 			if (sumwhamt == null)
 				sumwhamt = Env.ZERO;
 			MInvoice invoice = new MInvoice(pay.getCtx(), pay.getC_Invoice_ID(), pay.get_TrxName());
@@ -449,17 +459,27 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					MPaymentAllocate pal = new MPaymentAllocate(pay.getCtx(), palid, pay.get_TrxName());
 					BigDecimal wo = pal.getWriteOffAmt();
 					BigDecimal sumwhamt = Env.ZERO;
-					sumwhamt = DB.getSQLValueBD(
-							pay.get_TrxName(),
-							"SELECT COALESCE (SUM (iw.TaxAmt), 0) " +
-							"FROM LCO_InvoiceWithholding iw " +
-							"LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = iw.ITS_VoucherWithholding_ID " +
-							"WHERE iw.C_Invoice_ID = ? AND " +
-							"iw.IsActive = 'Y' AND " +
-							"iw.IsCalcOnPayment = 'Y' AND " +
-							"CASE WHEN iw.ITS_VoucherWithholding_ID IS NOT NULL THEN vw.DocStatus = 'CO' ELSE iw.Processed = 'N' END AND " +
-							"C_AllocationLine_ID IS NULL",
-							pal.getC_Invoice_ID());
+					
+					StringBuilder sqlWh = new StringBuilder("SELECT COALESCE(SUM(")
+							.append("CASE")
+								.append(" WHEN vw.ITS_VoucherWithholding_ID IS NOT NULL THEN")
+									.append(" currencyConvert(iw.TaxAmt, vw.C_Currency_ID")
+									.append(", ci.C_Currency_ID, ci.DateInvoiced")
+									.append(", vw.C_ConversionType_ID, vw.AD_Client_ID, vw.AD_Org_ID)")
+								.append(" ELSE")
+									.append(" iw.TaxAmt")
+							.append(" END")
+						.append("), 0)")
+						.append(" FROM LCO_InvoiceWithholding iw")
+						.append(" INNER JOIN C_Invoice ci ON ci.C_Invoice_ID = iw.C_Invoice_ID")
+						.append(" LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = iw.ITS_VoucherWithholding_ID")
+						.append(" WHERE iw.C_Invoice_ID = ? AND iw.IsActive = 'Y'")
+						.append(" AND iw.IsCalcOnPayment = 'Y'")
+						.append(" AND CASE WHEN iw.ITS_VoucherWithholding_ID IS NOT NULL THEN vw.DocStatus = 'CO' ELSE iw.Processed = 'N' END")
+						.append(" AND C_AllocationLine_ID IS NULL");
+					
+					sumwhamt = DB.getSQLValueBD(pay.get_TrxName(), sqlWh.toString(), pal.getC_Invoice_ID());
+					
 					if (sumwhamt == null)
 						sumwhamt = Env.ZERO;
 					MInvoice invoice = new MInvoice(pay.getCtx(), pal.getC_Invoice_ID(), pay.get_TrxName());
@@ -573,25 +593,25 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		// (Write off) vs (invoice withholding where iscalconpayment=Y)
 		// 20070807 - globalqss - instead of adding a new WriteOff post, find the
 		//  current WriteOff and subtract from the posting
-
+		
 		Doc doc = ah.getDoc();
 		FactsEventData fed = getEventData(event);
 		List<Fact> facts = fed.getFacts();
-
+		
 		// one fact per acctschema
 		for (int i = 0; i < facts.size(); i++)
 		{
 			Fact fact = facts.get(i);
 			MAcctSchema as = fact.getAcctSchema();
-
+			
 			MAllocationLine[] alloc_lines = ah.getLines(false);
 			for (int j = 0; j < alloc_lines.length; j++) {
 				BigDecimal tottax = BigDecimal.ZERO;
-
+				
 				MAllocationLine alloc_line = alloc_lines[j];
 				DocLine_Allocation docLine = new DocLine_Allocation(alloc_line, doc);
 				doc.setC_BPartner_ID(alloc_line.getC_BPartner_ID());
-
+				
 				int inv_id = alloc_line.getC_Invoice_ID();
 				if (inv_id <= 0)
 					continue;
@@ -600,14 +620,33 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				if (invoice == null || invoice.getC_Invoice_ID() == 0)
 					continue;
 				String sql =
-					  "SELECT i.C_Tax_ID, NVL(SUM(i.TaxBaseAmt),0) AS TaxBaseAmt, NVL(SUM(i.TaxAmt),0) AS TaxAmt, t.Name, t.Rate, t.IsSalesTax "
-					 + " FROM LCO_InvoiceWithholding i, C_Tax t "
-					+ " WHERE i.C_Invoice_ID = ? AND " +
-							 "(i.IsCalcOnPayment = 'Y' OR ITS_VoucherWithholding_ID IS NOT NULL) AND " +
+					  "SELECT i.C_Tax_ID"
+					  + ", NVL(SUM(CASE"
+					  + " WHEN vw.ITS_VoucherWithholding_ID IS NOT NULL THEN"
+					  	+ " currencyConvert(i.TaxBaseAmt, vw.C_Currency_ID"
+					  		+ ", ci.C_Currency_ID, ci.DateInvoiced, vw.C_ConversionType_ID"
+					  		+ ", vw.AD_Client_ID, vw.AD_Org_ID)"
+					  + " ELSE"
+					  	+ " i.TaxBaseAmt"
+					  + " END),0) AS TaxBaseAmt"
+					  + ", NVL(SUM(CASE"
+					  + " WHEN vw.ITS_VoucherWithholding_ID IS NOT NULL THEN"
+					  	+ " currencyConvert(i.TaxAmt, vw.C_Currency_ID"
+					  		+ ", ci.C_Currency_ID, ci.DateInvoiced, vw.C_ConversionType_ID"
+					  		+ ", vw.AD_Client_ID, vw.AD_Org_ID)"
+					  + " ELSE"
+					  	+ " i.TaxAmt"
+					  + " END),0) AS TaxAmt"
+					  + ", t.Name, t.Rate, t.IsSalesTax "
+					 + " FROM LCO_InvoiceWithholding i"
+					 + " INNER JOIN C_Invoice ci ON ci.C_Invoice_ID = i.C_Invoice_ID"
+					 + " INNER JOIN C_Tax t ON t.C_Tax_ID = i.C_Tax_ID"
+					 + " LEFT JOIN ITS_VoucherWithholding vw ON vw.ITS_VoucherWithholding_ID = i.ITS_VoucherWithholding_ID"
+					 + " WHERE i.C_Invoice_ID = ? AND " +
+							 "(i.IsCalcOnPayment = 'Y' OR vw.ITS_VoucherWithholding_ID IS NOT NULL) AND " +
 							 "i.IsActive = 'Y' AND " +
 							 "i.Processed = 'Y' AND " +
-							 "i.C_AllocationLine_ID = ? AND " +
-							 "i.C_Tax_ID = t.C_Tax_ID "
+							 "i.C_AllocationLine_ID = ? "
 					+ "GROUP BY i.C_Tax_ID, t.Name, t.Rate, t.IsSalesTax";
 				PreparedStatement pstmt = null;
 				ResultSet rs = null;

@@ -222,9 +222,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 				
 				MInvoice invoice = line.getC_Invoice();
 				
-				BigDecimal invoiceOpen = DB.getSQLValueBD(get_TrxName()
-						, "SELECT invoiceOpen(?, NULL)"
-						, invoice.get_ID());
+				BigDecimal invoiceOpen = invoice.getOpenAmt();
 				
 				BigDecimal writeOffAmt = line.getTaxAmt();
 				
