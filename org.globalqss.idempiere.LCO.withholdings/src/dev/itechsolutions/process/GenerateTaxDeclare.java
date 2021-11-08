@@ -137,6 +137,10 @@ public class GenerateTaxDeclare extends SvrProcess {
 		if (C_Tax_ID <= 0)
 			throw new AdempiereException("@C_Tax_ID@ @NotFound@");
 		
+		int AD_User_ID = DB.getSQLValue(get_TrxName()
+				, "SELECT AD_User_ID FROM AD_User WHERE C_BPartner_ID = ? ORDER BY IsBillTo DESC"
+				, C_BPartner_ID);
+		
 		StringBuilder sql = new StringBuilder("SELECT")
 				.append(" vw.ITS_VoucherWithholding_ID")
 				.append(", vw.DocumentNo")
@@ -195,7 +199,7 @@ public class GenerateTaxDeclare extends SvrProcess {
 					invoice.setC_ConversionType_ID(p_C_ConversionType_ID);
 					invoice.setPaymentRule(bpartner.getPaymentRulePO());
 					invoice.setC_PaymentTerm_ID(bpartner.getPO_PaymentTerm_ID());
-					invoice.setAD_User_ID(getAD_User_ID());
+					invoice.setAD_User_ID(AD_User_ID);
 					
 					invoice.saveEx();
 				}
