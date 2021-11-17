@@ -459,6 +459,8 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		if (!Util.isEmpty(m_processMsg, true))
 			return false;
 		
+		setProcessed(true);
+		setDocAction(DOCACTION_None);
 		return true;
 	}
 	
@@ -484,6 +486,8 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		if (!Util.isEmpty(m_processMsg, true))
 			return false;
 		
+		setProcessed(true);
+		setDocAction(DOCACTION_None);
 		return true;
 	}
 	
