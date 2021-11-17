@@ -198,7 +198,6 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			line.setDocumentNo(getDocumentNo());
 			line.setDateTrx(getDateTrx());
 			line.setDateAcct(getDateAcct());
-			line.setProcessed(true);
 			
 			if (!line.isCalcOnInvoice() && !line.isCalcOnPayment())
 			{
@@ -285,6 +284,22 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		return STATUS_Completed;
 	}
 	
+	
+	
+	@Override
+	public void setProcessed(boolean Processed) {
+		super.setProcessed(Processed);
+		
+		StringBuilder sqlUpdate = new StringBuilder("UPDATE LCO_InvoiceWithholding SET Processed = ?")
+				.append(" WHERE ITS_VoucherWithholding_ID = ?");
+		
+		DB.executeUpdateEx(sqlUpdate.toString()
+				, new Object[] {Processed, get_ID()}
+				, get_TrxName());
+		
+		getLines(true);
+	}
+
 	/**
 	 * 
 	 * @author Argenis Rodríguez
@@ -351,6 +366,8 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		if (!Util.isEmpty(m_processMsg, true))
 			return false;
 		
+		setProcessed(true);
+		setDocAction(DOCACTION_None);
 		return true;
 	}
 	
