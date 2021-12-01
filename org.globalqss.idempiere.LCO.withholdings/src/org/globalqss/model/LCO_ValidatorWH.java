@@ -47,12 +47,15 @@ import org.compiere.model.MAcctSchema;
 import org.compiere.model.MAllocationHdr;
 import org.compiere.model.MAllocationLine;
 import org.compiere.model.MDocType;
+import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MInvoiceLine;
 import org.compiere.model.MInvoicePaySchedule;
 import org.compiere.model.MInvoiceTax;
+import org.compiere.model.MMovement;
 import org.compiere.model.MPayment;
 import org.compiere.model.MPaymentAllocate;
+import org.compiere.model.MSequence;
 import org.compiere.model.MSysConfig;
 import org.compiere.model.PO;
 import org.compiere.model.Query;
@@ -63,10 +66,13 @@ import org.compiere.util.Msg;
 import org.compiere.util.Util;
 import org.osgi.service.event.Event;
 
+import dev.itechsolutions.util.ColumnUtils;
+
 /**
  *	Validator or Localization Colombia (Withholdings)
  *
  *  @author Carlos Ruiz - globalqss - Quality Systems & Solutions - http://globalqss.com
+ *  @author Argenis Rodríguez - iTechSolutions
  */
 public class LCO_ValidatorWH extends AbstractEventHandler
 {
@@ -98,6 +104,8 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		registerTableEvent(IEventTopics.DOC_AFTER_VOID, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_REVERSECORRECT, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_REVERSEACCRUAL, MAllocationHdr.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_COMPLETE, MMovement.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_COMPLETE, MInOut.Table_Name);
 		
 		//Added By Argenis Rodríguez
 		registerTableEvent(IEventTopics.DOC_BEFORE_VOID, MAllocationHdr.Table_Name);
@@ -246,6 +254,11 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			msg = translateWithholdingToTaxes((MInvoice) po);
 			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
+			
+			msg = validateInvoiceControl((MInvoice) po);
+			
+			if (!Util.isEmpty(msg, true))
+				throw new AdempiereException(msg);
 		}
 		
 		// after completing the invoice fix the dates on withholdings and mark the invoice withholdings as processed
@@ -292,7 +305,140 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					|| IEventTopics.DOC_BEFORE_REVERSEACCRUAL.equals(type)
 					|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type)))
 			validateAllocationBeforeVoid((MAllocationHdr) po);
+		
+		//Added By Argenis Rodríguez 30-11-2021
+		if (MMovement.Table_Name.equals(po.get_TableName())
+				&& IEventTopics.DOC_BEFORE_COMPLETE.equals(type))
+		{
+			msg = validateMovementControl((MMovement) po);
+			
+			if (!Util.isEmpty(msg, true))
+				throw new AdempiereException(msg);
+		}
+		
+		//Added By Argenis Rodríguez 30-11-2021
+		if (MInOut.Table_Name.equals(po.get_TableName())
+				&& IEventTopics.DOC_BEFORE_COMPLETE.equals(type))
+		{
+			msg = validateShipmentControl((MInOut) po);
+			
+			if (!Util.isEmpty(msg, true))
+				throw new AdempiereException(msg);
+		}
 	}	//	doHandleEvent
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param shipment
+	 * @return
+	 */
+	private String validateShipmentControl(MInOut shipment) {
+		
+		MDocType docType = (MDocType) shipment.getC_DocType();
+		
+		if (shipment.getReversal_ID() == 0
+				&& docType.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsControlNoDocument))
+		{
+			if (MDocType.DOCBASETYPE_MaterialDelivery.equals(docType.getDocBaseType())
+				&& shipment.isSOTrx())
+			{
+				if (!Util.isEmpty(shipment.get_ValueAsString(ColumnUtils.COLUMNNAME_ITS_ControlNumber), true))
+					return null;
+				
+				int ITS_ControlNoSequence_ID = docType.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ControlNoSequence_ID);
+				
+				if (ITS_ControlNoSequence_ID <= 0)
+					return "@ITS_ControlNoSequence_ID@ @NotFound@ @C_DocType_ID@ " + docType.getNameTrl();
+				
+				MSequence seq = new MSequence(shipment.getCtx()
+						, ITS_ControlNoSequence_ID
+						, shipment.get_TrxName());
+				
+				String controlNumber = MSequence.getDocumentNoFromSeq(seq, shipment.get_TrxName(), shipment);
+				
+				shipment.set_ValueOfColumn(ColumnUtils.COLUMNNAME_ITS_ControlNumber, controlNumber);
+				shipment.saveEx();
+			}else if (MDocType.DOCBASETYPE_MaterialReceipt.equals(docType.getDocBaseType())
+					&& !shipment.isSOTrx())
+			{
+				if (Util.isEmpty(shipment.get_ValueAsString(ColumnUtils.COLUMNNAME_ITS_ControlNumber), true))
+					return "@FillMandatory@ @ITS_ControlNumber@";
+			}
+		}
+		
+		return null;
+	}
+	
+	private String validateMovementControl(MMovement movement) {
+		
+		MDocType docType = (MDocType) movement.getC_DocType();
+		
+		if (movement.getReversal_ID() == 0
+				&& docType.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsControlNoDocument))
+		{
+			if (!Util.isEmpty(movement.get_ValueAsString(ColumnUtils.COLUMNNAME_ITS_ControlNumber), true))
+				return null;
+			
+			int ITS_ControlNoSequence_ID = docType.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ControlNoSequence_ID);
+			
+			if (ITS_ControlNoSequence_ID <= 0)
+				return "@ITS_ControlNoSequence_ID@ @NotFound@ @C_DocType@ " + docType.getNameTrl();
+			
+			MSequence seq = new MSequence(movement.getCtx()
+					, ITS_ControlNoSequence_ID
+					, movement.get_TrxName());
+			
+			String controlNumber = MSequence.getDocumentNoFromSeq(seq, movement.get_TrxName(), movement);
+			
+			movement.set_ValueOfColumn(ColumnUtils.COLUMNNAME_ITS_ControlNumber, controlNumber);
+			movement.saveEx();
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param inv
+	 * @return
+	 */
+	private String validateInvoiceControl(MInvoice inv) {
+		
+		MDocType docType = (MDocType) inv.getC_DocType();
+		
+		if (inv.getReversal_ID() == 0
+				&& docType.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsControlNoDocument))
+		{
+			if (inv.isSOTrx())
+			{
+				if (!Util.isEmpty(inv.get_ValueAsString(ColumnUtils.COLUMNNAME_ITS_ControlNumber), true))
+					return null;
+				
+				int ITS_ControlNoSequence_ID = docType.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ControlNoSequence_ID);
+				
+				if (ITS_ControlNoSequence_ID <= 0)
+					return "@ITS_ControlNoSequence_ID@ @NotFound@ @C_DocType@ " + docType.getNameTrl();
+				
+				MSequence seq = new MSequence(inv.getCtx(), ITS_ControlNoSequence_ID, inv.get_TrxName());
+				
+				String controlNumber = MSequence.getDocumentNoFromSeq(seq, inv.get_TrxName(), inv);
+				
+				inv.set_ValueOfColumn(ColumnUtils.COLUMNNAME_ITS_ControlNumber, controlNumber);
+				inv.saveEx();
+			}
+			else
+			{
+				if (Util.isEmpty(inv.get_ValueAsString(ColumnUtils.COLUMNNAME_ITS_ControlNumber), true))
+					return "@FillMandatory@ @ITS_ControlNumber@";
+				else if (Util.isEmpty(inv.get_ValueAsString(ColumnUtils.COLUMNNAME_ITS_POInvoiceNo), true))
+					return "@FillMandatory@ @ITS_POInvoiceNo@";
+			}
+		}
+		
+		return null;
+	}
 	
 	/**
 	 * @author Argenis Rodríguez

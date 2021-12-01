@@ -24,7 +24,16 @@ public class ColumnUtils {
 	public static final String COLUMNNAME_LCO_ISIC_ID = "LCO_ISIC_ID";
 	public static final String COLUMNNAME_LCO_TaxPayerType_ID = "LCO_TaxPayerType_ID";
 	public static final String COLUMNNAME_ValidMunicipality = "ValidMunicipality";
+	public static final String COLUMNNAME_ITS_ControlNumber = "ITS_ControlNumber";
+	public static final String COLUMNNAME_ITS_POInvoiceNo = "ITS_POInvoiceNo";
+	public static final String COLUMNNAME_ITS_ControlNoSequence_ID = "ITS_ControlNoSequence_ID";
+	public static final String COLUMNNAME_IsControlNoDocument = "IsControlNoDocument";
 	//-----------------------------End of Column Names-----------------------------------
+	
+	//------------------------------Context Variables------------------------------------
+	public static final String CONTEXT_IsCustomerShipment = "IsCustomerShipment";
+	public static final String CONTEXT_IsVendorReceipt = "IsVendorReceipt";
+	//----------------------------End Context Variables----------------------------------
 	
 	//-----------------------------List Column Values------------------------------------
 	//Values for GenerateWithholding Column

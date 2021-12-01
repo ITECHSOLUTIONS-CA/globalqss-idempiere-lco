@@ -37,6 +37,8 @@ import org.adempiere.base.IColumnCallout;
 import org.adempiere.base.IColumnCalloutFactory;
 import org.compiere.model.GridField;
 import org.compiere.model.GridTab;
+import org.compiere.model.I_C_DocType;
+import org.compiere.model.I_C_Invoice;
 import org.compiere.model.I_C_PaySelectionLine;
 import org.compiere.model.I_C_Payment;
 import org.compiere.model.I_C_PaymentAllocate;
@@ -48,6 +50,8 @@ import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 
+import dev.itechsolutions.callout.CalloutDocType;
+import dev.itechsolutions.callout.CalloutInvoice;
 import dev.itechsolutions.callout.CalloutVoucher;
 import dev.itechsolutions.model.I_ITS_VoucherWithholding;
 
@@ -65,37 +69,48 @@ public class LCO_CalloutWithholding implements IColumnCalloutFactory
 	public IColumnCallout[] getColumnCallouts(String tableName, String columnName) {
 		if (! MSysConfig.getBooleanValue("LCO_USE_WITHHOLDINGS", true, Env.getAD_Client_ID(Env.getCtx())))
 			return null;
-
+		
 		if (tableName.equalsIgnoreCase(I_LCO_WithholdingRule.Table_Name)) {
-
+			
 			// LCO_WithholdingRule.LCO_WithholdingType_ID
 			if (columnName.equalsIgnoreCase(I_LCO_WithholdingRule.COLUMNNAME_LCO_WithholdingType_ID))
 				return new IColumnCallout[]{new FillIsUse()};
-
 		} else if (tableName.equalsIgnoreCase(I_LCO_InvoiceWithholding.Table_Name)) {
-
 			// LCO_InvoiceWithholding.C_Tax_ID
 			if (columnName.equalsIgnoreCase(I_LCO_InvoiceWithholding.COLUMNNAME_C_Tax_ID))
 				return new IColumnCallout[]{new FillPercentFromTax()};
-
+			
 			// LCO_InvoiceWithholding.TaxBaseAmt
 			if (columnName.equalsIgnoreCase(I_LCO_InvoiceWithholding.COLUMNNAME_TaxBaseAmt))
 				return new IColumnCallout[]{new Recalc_TaxAmt()};
-
 		} else if (   tableName.equalsIgnoreCase(I_C_Payment.Table_Name)
 				   || tableName.equalsIgnoreCase(I_C_PaySelectionLine.Table_Name)
 				   || tableName.equalsIgnoreCase(I_C_PaymentAllocate.Table_Name)) {
-
 			// C_Payment.C_Invoice_ID or C_PaymentAllocate.C_Invoice_ID or C_PaySelectionLine.C_Invoice_ID 
 			if (columnName.equalsIgnoreCase(I_C_Payment.COLUMNNAME_C_Invoice_ID))
 				return new IColumnCallout[]{new FillWriteOffWithAllocations()};
-
 		}
 		//Added By Argenis Rodríguez 06-09-2021
 		//ITS_VoucherWithholding.C_DocType_ID
 		else if (I_ITS_VoucherWithholding.Table_Name.equals(tableName)
 				&& I_ITS_VoucherWithholding.COLUMNNAME_C_DocType_ID.equals(columnName))
-			return new IColumnCallout[]{new CalloutVoucher()};
+			return new IColumnCallout[] {new CalloutVoucher()};
+		
+		//Added By Argenis Rodríguez 29-11-2021
+		//C_Invoice.C_DocTypeTarget_ID
+		else if (I_C_Invoice.Table_Name.equals(tableName)
+				&& (I_C_Invoice.COLUMNNAME_C_DocTypeTarget_ID.equals(columnName)
+						|| I_C_Invoice.COLUMNNAME_C_Invoice_ID.equals(columnName)))
+			return new IColumnCallout[] {new CalloutInvoice()};
+		
+		//Added By Argenis Rodríguez 30-11-2021
+		//C_DocType.IsSOTrx
+		//C_DocType.DocBaseType
+		else if (I_C_DocType.Table_Name.equals(tableName)
+				&& (I_C_DocType.COLUMNNAME_DocBaseType.equals(columnName)
+					|| I_C_DocType.COLUMNNAME_IsSOTrx.equals(columnName)
+					|| I_C_DocType.COLUMNNAME_C_DocType_ID.equals(columnName)))
+			return new IColumnCallout[] {new CalloutDocType()};
 		
 		return null;
 	}
