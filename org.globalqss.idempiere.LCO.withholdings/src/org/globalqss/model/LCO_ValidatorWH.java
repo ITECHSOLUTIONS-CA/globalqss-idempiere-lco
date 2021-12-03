@@ -29,7 +29,10 @@ import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.logging.Level;
 
 import org.adempiere.base.event.AbstractEventHandler;
@@ -98,6 +101,15 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		registerTableEvent(IEventTopics.DOC_BEFORE_PREPARE, MInvoice.Table_Name);
 		registerTableEvent(IEventTopics.DOC_BEFORE_COMPLETE, MInvoice.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_COMPLETE, MInvoice.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSEACCRUAL, MInvoice.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSECORRECT, MInvoice.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_VOID, MInvoice.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSEACCRUAL, MMovement.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSECORRECT, MMovement.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_VOID, MMovement.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSEACCRUAL, MInOut.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSECORRECT, MInOut.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_VOID, MInOut.Table_Name);
 		registerTableEvent(IEventTopics.DOC_BEFORE_COMPLETE, MPayment.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_COMPLETE, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.ACCT_FACTS_VALIDATE, MAllocationHdr.Table_Name);
@@ -162,9 +174,20 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				)
 			)
 		{
-			msg = clearInvoiceWithholdingAmtFromInvoiceLine((MInvoiceLine) po, type);
+			MInvoiceLine invLine = (MInvoiceLine) po;
+			msg = clearInvoiceWithholdingAmtFromInvoiceLine(invLine, type);
 			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
+			
+			if (type.equals(IEventTopics.PO_BEFORE_NEW))
+			{
+				MInvoice inv = invLine.getParent();
+				
+				if (invLine.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_InvoiceAffected_ID) <= 0
+						&& inv.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_InvoiceAffected_ID) > 0)
+					invLine.set_ValueOfColumn(ColumnUtils.COLUMNNAME_ITS_InvoiceAffected_ID
+							, inv.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_InvoiceAffected_ID));
+			}
 		}
 		
 		if (po instanceof X_LCO_WithholdingCalc
@@ -266,6 +289,11 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			msg = completeInvoiceWithholding((MInvoice) po);
 			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
+			
+			msg = automaticAllocation((MInvoice) po);
+			
+			if (!Util.isEmpty(msg, true))
+				throw new AdempiereException(msg);
 		}
 		
 		// before completing the payment - validate that writeoff amount must be greater than sum of payment withholdings
@@ -325,7 +353,286 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			if (!Util.isEmpty(msg, true))
 				throw new AdempiereException(msg);
 		}
+		
+		//Added By Argenis Rodríguez 02-12-2021
+		if (MInvoice.Table_Name.equals(po.get_TableName())
+				&& (IEventTopics.DOC_BEFORE_REVERSEACCRUAL.equals(type)
+						|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type)
+						|| IEventTopics.DOC_BEFORE_VOID.equals(type)))
+			overwriteDocNo((MInvoice) po);
+		
+		//Added By Argenis Rodríguez 02-12-2021
+		if (MMovement.Table_Name.equals(po.get_TableName())
+				&& (IEventTopics.DOC_BEFORE_REVERSEACCRUAL.equals(type)
+						|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type)
+						|| IEventTopics.DOC_BEFORE_VOID.equals(type)))
+			overwriteDocNo((MMovement) po);
+		
+		//Added By Argenis Rodríguez 02-12-2021
+		if (MInOut.Table_Name.equals(po.get_TableName())
+				&& (IEventTopics.DOC_BEFORE_REVERSEACCRUAL.equals(type)
+						|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type)
+						|| IEventTopics.DOC_BEFORE_VOID.equals(type)))
+			overwriteDocNo((MInOut) po);
 	}	//	doHandleEvent
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param creditMemo
+	 * @return
+	 */
+	private String automaticAllocation(MInvoice creditMemo) {
+		
+		MDocType dt = (MDocType) creditMemo.getC_DocType();
+		
+		if (!dt.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsAutoAllocation)
+				||creditMemo.isPaid()
+				|| creditMemo.getReversal_ID() != 0
+				|| !creditMemo.isCreditMemo())
+			return null;
+		
+		int C_DocTypeAllocation_ID = dt.get_ValueAsInt(ColumnUtils.COLUMNNAME_C_DocTypeAllocation_ID);
+		
+		if (C_DocTypeAllocation_ID <= 0)
+			return "@C_DocTypeAllocation_ID@ @NotFound@";
+		
+		BigDecimal appliedAmt = BigDecimal.ZERO;
+		MInvoiceLine[] lines = getLines(creditMemo.getCtx(), creditMemo.get_ID()
+				, "ITS_InvoiceAffected_ID IS NOT NULL", creditMemo.get_TrxName());
+		MAllocationHdr alloc = null;
+		BigDecimal creditMemoOpenAmt = creditMemo.getOpenAmt();
+		
+		for (MInvoiceLine line: lines)
+		{
+			int ITS_InvoiceAffected_ID = line.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_InvoiceAffected_ID);
+			
+			MInvoice invoiceAffected = new MInvoice(creditMemo.getCtx()
+					, ITS_InvoiceAffected_ID
+					, creditMemo.get_TrxName());
+			
+			if (invoiceAffected.isCreditMemo()
+					|| invoiceAffected.isPaid())
+				continue;
+			
+			BigDecimal invAffectedOpenAmt = invoiceAffected.getOpenAmt();
+			BigDecimal amtApply = line.getLineNetAmt();
+			
+			if (amtApply.compareTo(invAffectedOpenAmt) > 0)
+				amtApply = invAffectedOpenAmt;
+			
+			appliedAmt = appliedAmt.add(amtApply);
+			
+			if (alloc == null)
+				alloc = createAllocation(creditMemo.getCtx(), C_DocTypeAllocation_ID
+						, creditMemo.getDateInvoiced(), creditMemo.getDateAcct()
+						, creditMemo.getC_Currency_ID(), creditMemo.getAD_Org_ID()
+						, creditMemo.get_TrxName());
+			
+			createAllocationLine(invoiceAffected, alloc
+					, amtApply, invAffectedOpenAmt.subtract(amtApply));
+		}
+		
+		createAllocationLine(creditMemo, alloc
+				, appliedAmt, creditMemoOpenAmt.subtract(appliedAmt));
+		
+		String msg = completeAllocation(alloc);
+		
+		if (creditMemo.testAllocation(true))
+			creditMemo.saveEx();
+		
+		return msg;
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param alloc
+	 * @return
+	 */
+	private static String completeAllocation(MAllocationHdr alloc) {
+		if (alloc != null && !alloc.processIt(MAllocationHdr.ACTION_Complete))
+			return alloc.getProcessMsg();
+		else if (alloc != null)
+			alloc.saveEx();
+		
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param invoice
+	 * @param alloc
+	 * @param amtToApply
+	 */
+	private static void createAllocationLine(MInvoice invoice
+			, MAllocationHdr alloc, BigDecimal amtToApply, BigDecimal openAmt) {
+		
+		if (alloc == null)
+			return ;
+		
+		if (!invoice.isSOTrx())
+		{
+			amtToApply = amtToApply.negate();
+			openAmt = openAmt.negate();
+		}
+		
+		if (invoice.isCreditMemo())
+		{
+			amtToApply = amtToApply.negate();
+			openAmt = openAmt.negate();
+		}
+		
+		MAllocationLine aLine = new MAllocationLine(alloc, amtToApply
+				, BigDecimal.ZERO, BigDecimal.ZERO
+				, openAmt);
+		
+		aLine.setDocInfo(invoice.getC_BPartner_ID(), 0, invoice.get_ID());
+		aLine.saveEx();
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param ctx
+	 * @param C_DocType_ID
+	 * @param date
+	 * @param C_Currency_ID
+	 * @param AD_Org_ID
+	 * @param trxName
+	 * @return
+	 */
+	private static MAllocationHdr createAllocation(Properties ctx, int C_DocType_ID
+			, Timestamp date, Timestamp dateAcct
+			, int C_Currency_ID, int AD_Org_ID, String trxName) {
+		
+		MAllocationHdr alloc = new MAllocationHdr(ctx, false
+				, date, C_Currency_ID
+				, Env.getContext(ctx, "#AD_User_Name") + " " + Msg.translate(ctx, "IsAutoAllocation")
+				, trxName);
+		
+		alloc.setDateAcct(dateAcct);
+		alloc.setAD_Org_ID(AD_Org_ID);
+		alloc.setC_DocType_ID(C_DocType_ID);
+		alloc.saveEx();
+		
+		return alloc;
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param ctx
+	 * @param C_Invoice_ID
+	 * @param where
+	 * @param trxName
+	 * @return
+	 */
+	private static MInvoiceLine[] getLines(Properties ctx, int C_Invoice_ID
+			, String where, String trxName) {
+		
+		StringBuilder whereClause = new StringBuilder("C_Invoice_ID = ?");
+		
+		if (!Util.isEmpty(where, true))
+			whereClause.append(" AND ").append(where);
+		
+		List<MInvoiceLine> lines = new Query(ctx, MInvoiceLine.Table_Name, whereClause.toString(), trxName)
+				.setParameters(C_Invoice_ID)
+				.setOnlyActiveRecords(true)
+				.list();
+		
+		return lines.toArray(MInvoiceLine[]::new);
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param inout
+	 */
+	private void overwriteDocNo(MInOut inout) {
+		
+		MDocType dt = (MDocType) inout.getC_DocType();
+		
+		if (!dt.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsOverWriteDocNoWhenReversing))
+			return ;
+		
+		int ITS_ReverseSequence_ID = dt.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ReverseSequence_ID);
+		String newDocNo = null;
+		
+		if (ITS_ReverseSequence_ID > 0)
+		{
+			MSequence seq = new MSequence(inout.getCtx(), ITS_ReverseSequence_ID, inout.get_TrxName());
+			newDocNo = MSequence.getDocumentNoFromSeq(seq, inout.get_TrxName(), inout);
+		}
+		
+		if (!Util.isEmpty(newDocNo, true))
+			inout.setDocumentNo(newDocNo);
+		else
+			inout.setDocumentNo(String.valueOf(inout.get_ID()));
+		
+		inout.saveEx();
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param movement
+	 */
+	private void overwriteDocNo(MMovement movement) {
+		
+		MDocType dt = (MDocType) movement.getC_DocType();
+		
+		if (!dt.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsOverWriteDocNoWhenReversing))
+			return ;
+		
+		int ITS_ReverseSequence_ID = dt.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ReverseSequence_ID);
+		String newDocNo = null;
+		
+		if (ITS_ReverseSequence_ID > 0)
+		{
+			MSequence seq = new MSequence(movement.getCtx(), ITS_ReverseSequence_ID, movement.get_TrxName());
+			newDocNo = MSequence.getDocumentNoFromSeq(seq, movement.get_TrxName(), movement);
+		}
+		
+		if (!Util.isEmpty(newDocNo, true))
+			movement.setDocumentNo(newDocNo);
+		else
+			movement.setDocumentNo(String.valueOf(movement.get_ID()));
+		
+		movement.saveEx();
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param inv
+	 */
+	private void overwriteDocNo(MInvoice inv) {
+		
+		MDocType dt = Optional.ofNullable((MDocType) inv.getC_DocType())
+				.filter(dct -> dct.get_ID() > 0)
+				.orElseGet(() -> (MDocType) inv.getC_DocTypeTarget());
+		
+		if (!dt.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsOverWriteDocNoWhenReversing))
+			return ;
+		
+		int ITS_ReverseSequence_ID = dt.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ReverseSequence_ID);
+		String newDocNo = null;
+		
+		if (ITS_ReverseSequence_ID > 0)
+		{
+			MSequence seq = new MSequence(inv.getCtx(), ITS_ReverseSequence_ID, inv.get_TrxName());
+			newDocNo = MSequence.getDocumentNoFromSeq(seq, inv.get_TrxName(), inv);
+		}
+		
+		if (!Util.isEmpty(newDocNo, true))
+			inv.setDocumentNo(newDocNo);
+		else
+			inv.setDocumentNo(String.valueOf(inv.get_ID()));
+		
+		inv.saveEx();
+	}
 	
 	/**
 	 * 

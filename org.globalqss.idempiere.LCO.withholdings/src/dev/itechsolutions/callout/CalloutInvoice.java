@@ -8,7 +8,6 @@ import org.compiere.model.GridField;
 import org.compiere.model.GridTab;
 import org.compiere.model.I_C_Invoice;
 import org.compiere.model.MDocType;
-import org.compiere.model.MInvoice;
 import org.compiere.util.Env;
 
 import dev.itechsolutions.util.ColumnUtils;
@@ -33,10 +32,13 @@ public class CalloutInvoice implements IColumnCallout {
 		if (isCalloutActive(mTab))
 			return null;
 		
-		if (I_C_Invoice.Table_Name.equals(mTab.getTableName())
-				&& (I_C_Invoice.COLUMNNAME_C_DocTypeTarget_ID.equals(mField.getColumnName())
-						|| I_C_Invoice.COLUMNNAME_C_Invoice_ID.equals(mField.getColumnName())))
-			return docType(ctx, WindowNo, mTab, mField, value);
+		if (I_C_Invoice.Table_Name.equals(mTab.getTableName()))
+		{
+			if (I_C_Invoice.COLUMNNAME_C_DocTypeTarget_ID.equals(mField.getColumnName()))
+				return docType(ctx, WindowNo, mTab, mField, value);
+			else if (I_C_Invoice.COLUMNNAME_C_Invoice_ID.equals(mField.getColumnName()))
+				return docBaseType(ctx, WindowNo, mTab, mField, value);
+		}
 		
 		return null;
 	}
@@ -46,11 +48,34 @@ public class CalloutInvoice implements IColumnCallout {
 	 * @author Argenis Rodríguez
 	 * @param mTab
 	 * @param columnName
-	 * @return
+	 * @return Integer value or zero if not exists
 	 */
-	private static int getValueAsInt(GridTab mTab, String columnName) {
+	private int getValueAsInt(GridTab mTab, String columnName) {
 		return Optional.ofNullable((Integer) mTab.getValue(columnName))
 				.orElse(0);
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param ctx
+	 * @param WindowNo
+	 * @param mTab
+	 * @param mField
+	 * @param value
+	 * @return
+	 */
+	private String docBaseType(Properties ctx, int WindowNo
+			, GridTab mTab, GridField mField
+			, Object value) {
+		
+		int C_DocType_ID = getValueAsInt(mTab, I_C_Invoice.COLUMNNAME_C_DocTypeTarget_ID);
+		
+		MDocType dt = MDocType.get(ctx, C_DocType_ID);
+		
+		Env.setContext(ctx, WindowNo, "DocBaseType", dt.getDocBaseType());
+		
+		return null;
 	}
 	
 	/**
@@ -67,17 +92,11 @@ public class CalloutInvoice implements IColumnCallout {
 			, GridTab mTab, GridField mField
 			, Object value) {
 		
-		int C_DocType_ID = MInvoice.COLUMNNAME_C_DocTypeTarget_ID.equals(mField.getColumnName())
-				? Optional.ofNullable((Integer) value).orElse(0)
-				: getValueAsInt(mTab, MInvoice.COLUMNNAME_C_DocTypeTarget_ID);
-		
-		C_DocType_ID = Optional.of(C_DocType_ID)
-				.filter(docType -> docType > 0)
-				.orElseGet(() -> getValueAsInt(mTab, MInvoice.COLUMNNAME_C_DocType_ID));
+		int C_DocType_ID = Optional.ofNullable((Integer) value)
+				.orElse(0);
 		
 		if (C_DocType_ID <= 0)
 		{
-			Env.setContext(ctx, WindowNo, ColumnUtils.COLUMNNAME_IsControlNoDocument, false);
 			mTab.setValue(ColumnUtils.COLUMNNAME_ITS_ControlNumber, null);
 			mTab.setValue(ColumnUtils.COLUMNNAME_ITS_POInvoiceNo, null);
 			return null;
@@ -85,10 +104,6 @@ public class CalloutInvoice implements IColumnCallout {
 		
 		MDocType dt = MDocType.get(ctx, C_DocType_ID);
 		boolean isControlNoDocument = dt.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsControlNoDocument);
-		
-		Env.setContext(ctx, WindowNo
-				, ColumnUtils.COLUMNNAME_IsControlNoDocument
-				, isControlNoDocument);
 		
 		if (!isControlNoDocument)
 		{

@@ -28,6 +28,10 @@ public class ColumnUtils {
 	public static final String COLUMNNAME_ITS_POInvoiceNo = "ITS_POInvoiceNo";
 	public static final String COLUMNNAME_ITS_ControlNoSequence_ID = "ITS_ControlNoSequence_ID";
 	public static final String COLUMNNAME_IsControlNoDocument = "IsControlNoDocument";
+	public static final String COLUMNNAME_IsAutoAllocation = "IsAutoAllocation";
+	public static final String COLUMNNAME_IsOverWriteDocNoWhenReversing = "IsOverWriteDocNoWhenReversing";
+	public static final String COLUMNNAME_ITS_ReverseSequence_ID = "ITS_ReverseSequence_ID";
+	public static final String COLUMNNAME_ITS_InvoiceAffected_ID = "ITS_InvoiceAffected_ID";
 	//-----------------------------End of Column Names-----------------------------------
 	
 	//------------------------------Context Variables------------------------------------

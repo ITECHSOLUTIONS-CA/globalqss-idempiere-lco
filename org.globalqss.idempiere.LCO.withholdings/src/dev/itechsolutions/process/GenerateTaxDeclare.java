@@ -18,6 +18,7 @@ import org.compiere.model.MOrgInfo;
 import org.compiere.process.ProcessInfoParameter;
 import org.compiere.process.SvrProcess;
 import org.compiere.util.DB;
+import org.compiere.util.Env;
 import org.compiere.util.Msg;
 import org.compiere.util.Util;
 import org.globalqss.model.X_LCO_WithholdingType;
@@ -141,6 +142,26 @@ public class GenerateTaxDeclare extends SvrProcess {
 				, "SELECT AD_User_ID FROM AD_User WHERE C_BPartner_ID = ? ORDER BY IsBillTo DESC"
 				, C_BPartner_ID);
 		
+		int M_PriceList_ID = DB.getSQLValue(get_TrxName()
+				, "SELECT pl.M_PriceList_ID FROM C_BPartner bp"
+				 + " INNER JOIN C_DocType dt ON dt.C_DocType_ID = ?"
+				 + " INNER JOIN M_PriceList pl ON pl.M_PriceList_ID =("
+				 	+ " CASE WHEN dt.IsSOTrx = 'Y' THEN bp.M_PriceList_ID ELSE bp.PO_PriceList_ID END"
+				 + ") WHERE bp.C_BPartner_ID = ?"
+				, C_DocTypeDeclare_ID, C_BPartner_ID);
+		
+		if (M_PriceList_ID <= 0)
+			M_PriceList_ID = DB.getSQLValue(get_TrxName()
+					, "SELECT pl.M_PriceList_ID FROM M_PriceList pl"
+					 + " INNER JOIN C_DocType dt ON dt.C_DocType_ID = ?"
+					 + " WHERE pl.AD_Client_ID = ? AND pl.IsSOPriceList = dt.IsSOTrx"
+					 + " AND pl.IsActive = 'Y'"
+					 + " ORDER BY pl.IsDefault DESC"
+					, C_DocTypeDeclare_ID, Env.getAD_Client_ID(getCtx()));
+		
+		if (M_PriceList_ID <= 0)
+			throw new AdempiereException("@M_PriceList_ID@ @NotFound@");
+		
 		StringBuilder sql = new StringBuilder("SELECT")
 				.append(" vw.ITS_VoucherWithholding_ID")
 				.append(", vw.DocumentNo")
@@ -195,6 +216,7 @@ public class GenerateTaxDeclare extends SvrProcess {
 					invoice.setDateInvoiced(p_DateDoc);
 					invoice.setDateAcct(p_DateDoc);
 					invoice.setIsSOTrx(dtDeclare.isSOTrx());
+					invoice.setM_PriceList_ID(M_PriceList_ID);
 					invoice.setC_Currency_ID(p_C_Currency_ID);
 					invoice.setC_ConversionType_ID(p_C_ConversionType_ID);
 					invoice.setPaymentRule(bpartner.getPaymentRulePO());
