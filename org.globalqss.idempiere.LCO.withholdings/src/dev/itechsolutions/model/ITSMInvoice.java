@@ -522,6 +522,7 @@ public class ITSMInvoice extends LCO_MInvoice {
 					if (wc.getAmountRefunded() != null &&
 							wc.getAmountRefunded().compareTo(Env.ZERO) > 0) {
 						taxamt = taxamt.subtract(wc.getAmountRefunded());
+						iwh.setAmountRefunded(wc.getAmountRefunded());
 					}
 					iwh.setTaxAmt(taxamt);
 					iwh.setTaxBaseAmt(base);

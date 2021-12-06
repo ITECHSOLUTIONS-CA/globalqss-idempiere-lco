@@ -38,7 +38,30 @@ public class CalloutInvoice implements IColumnCallout {
 				return docType(ctx, WindowNo, mTab, mField, value);
 			else if (I_C_Invoice.COLUMNNAME_C_Invoice_ID.equals(mField.getColumnName()))
 				return docBaseType(ctx, WindowNo, mTab, mField, value);
+			else if (ColumnUtils.COLUMNNAME_ITS_POInvoiceNo.equals(mField.getColumnName()))
+				return poInvoiceNo(ctx, WindowNo, mTab, mField, value);
 		}
+		
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @param ctx
+	 * @param WindowNo
+	 * @param mTab
+	 * @param mField
+	 * @param value
+	 * @return
+	 */
+	private String poInvoiceNo(Properties ctx, int WindowNo
+			, GridTab mTab, GridField mField
+			, Object value) {
+		
+		String POInvoiceNo = (String) value;
+		
+		mTab.setValue(I_C_Invoice.COLUMNNAME_DocumentNo, POInvoiceNo);
 		
 		return null;
 	}

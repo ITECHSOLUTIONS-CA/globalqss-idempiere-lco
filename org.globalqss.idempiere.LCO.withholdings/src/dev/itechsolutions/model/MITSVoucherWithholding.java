@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAllocationHdr;
 import org.compiere.model.MAllocationLine;
 import org.compiere.model.MDocType;
@@ -385,32 +386,40 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		
 		for (MLCOInvoiceWithholding line: m_lines)
 		{
-			int C_Currency_ID = line.getC_Invoice().getC_Currency_ID();
-			int AD_Org_ID = line.getC_Invoice().getAD_Org_ID();
 			
-			if (line.getC_AllocationLine_ID() <= 0)
-				continue;
-			
-			if (alloc == null
-					|| lastC_Currency_ID != C_Currency_ID
-					|| lastAD_Org_ID != AD_Org_ID)
+			if (!line.isCalcOnPayment() && !line.isCalcOnInvoice())
 			{
-				if (alloc != null
-						&& !alloc.processIt(MAllocationHdr.DOCACTION_Reverse_Correct))
-					return alloc.getProcessMsg();
+				int C_Currency_ID = line.getC_Invoice().getC_Currency_ID();
+				int AD_Org_ID = line.getC_Invoice().getAD_Org_ID();
 				
-				alloc = (MAllocationHdr) line.getC_AllocationLine().getC_AllocationHdr();
+				if (line.getC_AllocationLine_ID() <= 0)
+					continue;
 				
-				lastC_Currency_ID = C_Currency_ID;
-				lastAD_Org_ID = AD_Org_ID;
+				if (alloc == null
+						||lastC_Currency_ID != C_Currency_ID
+						|| lastAD_Org_ID != AD_Org_ID)
+				{
+					if (alloc != null && !alloc.processIt(MAllocationHdr.DOCACTION_Reverse_Correct))
+						return alloc.getProcessMsg();
+					
+					alloc = (MAllocationHdr) line.getC_AllocationLine().getC_AllocationHdr();
+					
+					lastC_Currency_ID = C_Currency_ID;
+					lastAD_Org_ID = AD_Org_ID;
+				}
+				
+				line.setC_AllocationLine_ID(0);
+				line.saveEx();
+			} else if (line.isCalcOnPayment() && line.getC_AllocationLine_ID() > 0)
+			{
+				MAllocationLine aLine = new MAllocationLine(getCtx(), line.getC_AllocationLine_ID(), get_TrxName());
+				MAllocationHdr ah = aLine.getParent();
+				
+				return "@VoucherWithAllocation@ " + ah.getDocumentNo();
 			}
-			
-			line.setC_AllocationLine_ID(0);
-			line.saveEx();
 		}
 		
-		if (alloc != null
-				&& !alloc.processIt(MAllocationHdr.ACTION_Reverse_Correct))
+		if (alloc != null && !alloc.processIt(MAllocationHdr.DOCACTION_Reverse_Correct))
 			return alloc.getProcessMsg();
 		
 		return null;
@@ -500,6 +509,11 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		if (!Util.isEmpty(m_processMsg, true))
 			return false;
 		
+		m_processMsg = validateAllocations();
+		
+		if (!Util.isEmpty(m_processMsg, true))
+			return false;
+		
 		setProcessed(false);
 		setIsApproved(false);
 		setDocAction(DOCACTION_Complete);
@@ -511,6 +525,58 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			return false;
 		
 		return true;
+	}
+	
+	/**
+	 * 
+	 * @author Argenis Rodríguez
+	 * @return
+	 */
+	private String validateAllocations() {
+		
+		int lastAD_Org_ID = -1;
+		int lastC_Currency_ID = -1;
+		MAllocationHdr alloc = null;
+		
+		for (MLCOInvoiceWithholding iwh: getLines(true))
+		{
+			if (iwh.isCalcOnPayment() && iwh.getC_AllocationLine_ID() > 0)
+			{
+				MAllocationLine aLine = new MAllocationLine(getCtx(), iwh.getC_AllocationLine_ID(), get_TrxName());
+				MAllocationHdr allocation = aLine.getParent();
+				
+				return "@VoucherWithAllocation@ " + allocation.getDocumentNo();
+			} else if (!iwh.isCalcOnPayment() && !iwh.isCalcOnInvoice())
+			{
+				if (iwh.getC_AllocationLine_ID() <= 0)
+					continue;
+				
+				int AD_Org_ID = iwh.getAD_Org_ID();
+				int C_Currency_ID = iwh.getC_Invoice().getC_Currency_ID();
+				
+				if (alloc == null
+						|| lastAD_Org_ID != AD_Org_ID
+						|| lastC_Currency_ID != C_Currency_ID)
+				{
+					if (alloc != null)
+						alloc.deleteEx(true);
+					
+					MAllocationLine aLine = new MAllocationLine(getCtx(), iwh.getC_AllocationLine_ID(), iwh.get_TrxName());
+					alloc = aLine.getParent();
+					
+					lastAD_Org_ID = AD_Org_ID;
+					lastC_Currency_ID = C_Currency_ID;
+				}
+				
+				iwh.setC_AllocationLine_ID(0);
+				iwh.saveEx();
+			}
+		}
+		
+		if (alloc != null)
+			alloc.deleteEx(true);
+		
+		return null;
 	}
 	
 	@Override
@@ -584,6 +650,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 				options[index++] = ACTION_Complete;
 			else if (STATUS_Completed.equals(docStatus))
 			{
+				options[index++] = ACTION_ReActivate;
 				options[index++] = ACTION_Void;
 				options[index++] = ACTION_Close;
 			}
@@ -623,6 +690,36 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			{
 				log.saveError("Error", Msg.getMsg(getCtx(), "InvoiceInVoucher"
 						, new Object[] {voucher}));
+				return false;
+			}
+		}
+		
+		if (!newRecord
+				&& is_ValueChanged(COLUMNNAME_C_BPartner_ID))
+		{
+			if (getLines().length> 0)
+			{
+				log.saveError("Error", new AdempiereException("@CanNotChangeBPartner@"));
+				return false;
+			}
+		}
+		
+		if (!newRecord
+				&& is_ValueChanged(COLUMNNAME_C_Currency_ID))
+		{
+			if (getLines().length> 0)
+			{
+				log.saveError("Error", new AdempiereException("@CanNotChangeCurrency@"));
+				return false;
+			}
+		}
+		
+		if (!newRecord
+				&& is_ValueChanged(COLUMNNAME_C_ConversionType_ID))
+		{
+			if (getLines().length> 0)
+			{
+				log.saveError("Error", new AdempiereException("@CanNotChangeConversionType@"));
 				return false;
 			}
 		}

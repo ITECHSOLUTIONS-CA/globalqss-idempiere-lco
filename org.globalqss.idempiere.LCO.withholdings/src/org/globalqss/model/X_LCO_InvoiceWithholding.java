@@ -33,7 +33,7 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20210906L;
+	private static final long serialVersionUID = 20211203L;
 
     /** Standard Constructor */
     public X_LCO_InvoiceWithholding (Properties ctx, int LCO_InvoiceWithholding_ID, String trxName)
@@ -80,6 +80,23 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
         .append(get_ID()).append("]");
       return sb.toString();
     }
+
+	/** Set AmountRefunded.
+		@param AmountRefunded AmountRefunded	  */
+	public void setAmountRefunded (BigDecimal AmountRefunded)
+	{
+		set_ValueNoCheck (COLUMNNAME_AmountRefunded, AmountRefunded);
+	}
+
+	/** Get AmountRefunded.
+		@return AmountRefunded	  */
+	public BigDecimal getAmountRefunded () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_AmountRefunded);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
 
 	public org.compiere.model.I_C_AllocationLine getC_AllocationLine() throws RuntimeException
     {

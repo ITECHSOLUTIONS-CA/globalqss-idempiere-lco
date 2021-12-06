@@ -54,6 +54,7 @@ import dev.itechsolutions.callout.CalloutDocType;
 import dev.itechsolutions.callout.CalloutInvoice;
 import dev.itechsolutions.callout.CalloutVoucher;
 import dev.itechsolutions.model.I_ITS_VoucherWithholding;
+import dev.itechsolutions.util.ColumnUtils;
 
 /**
  *	LCO_CalloutWithholding
@@ -100,7 +101,8 @@ public class LCO_CalloutWithholding implements IColumnCalloutFactory
 		//C_Invoice.C_DocTypeTarget_ID
 		else if (I_C_Invoice.Table_Name.equals(tableName)
 				&& (I_C_Invoice.COLUMNNAME_C_DocTypeTarget_ID.equals(columnName)
-						|| I_C_Invoice.COLUMNNAME_C_Invoice_ID.equals(columnName)))
+						|| I_C_Invoice.COLUMNNAME_C_Invoice_ID.equals(columnName)
+						|| ColumnUtils.COLUMNNAME_ITS_POInvoiceNo.equals(columnName)))
 			return new IColumnCallout[] {new CalloutInvoice()};
 		
 		//Added By Argenis Rodríguez 30-11-2021

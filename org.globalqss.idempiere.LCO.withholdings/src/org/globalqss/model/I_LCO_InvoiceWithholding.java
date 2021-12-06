@@ -64,6 +64,15 @@ public interface I_LCO_InvoiceWithholding
 	  */
 	public int getAD_Org_ID();
 
+    /** Column name AmountRefunded */
+    public static final String COLUMNNAME_AmountRefunded = "AmountRefunded";
+
+	/** Set AmountRefunded	  */
+	public void setAmountRefunded (BigDecimal AmountRefunded);
+
+	/** Get AmountRefunded	  */
+	public BigDecimal getAmountRefunded();
+
     /** Column name C_AllocationLine_ID */
     public static final String COLUMNNAME_C_AllocationLine_ID = "C_AllocationLine_ID";
 

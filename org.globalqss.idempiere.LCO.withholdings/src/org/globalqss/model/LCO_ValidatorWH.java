@@ -96,6 +96,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		registerTableEvent(IEventTopics.PO_BEFORE_DELETE, MInvoiceLine.Table_Name);
 		registerTableEvent(IEventTopics.PO_BEFORE_NEW, X_LCO_WithholdingCalc.Table_Name);
 		registerTableEvent(IEventTopics.PO_BEFORE_CHANGE, X_LCO_WithholdingCalc.Table_Name);
+		registerTableEvent(IEventTopics.PO_BEFORE_DELETE, MAllocationHdr.Table_Name);
 		
 		//	Documents to be monitored
 		registerTableEvent(IEventTopics.DOC_BEFORE_PREPARE, MInvoice.Table_Name);
@@ -331,7 +332,8 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		if (MAllocationHdr.Table_Name.equals(po.get_TableName())
 				&& (IEventTopics.DOC_BEFORE_VOID.equals(type)
 					|| IEventTopics.DOC_BEFORE_REVERSEACCRUAL.equals(type)
-					|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type)))
+					|| IEventTopics.DOC_BEFORE_REVERSECORRECT.equals(type)
+					|| IEventTopics.PO_BEFORE_DELETE.equals(type)))
 			validateAllocationBeforeVoid((MAllocationHdr) po);
 		
 		//Added By Argenis Rodríguez 30-11-2021
@@ -767,15 +769,24 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		
 		if (match)
 			throw new AdempiereException("@AllocationInVoucher@");
+		
+		StringBuilder sqlUpdate = new StringBuilder("UPDATE LCO_InvoiceWithholding iwh SET C_AllocationLine_ID = NULL")
+				.append(" WHERE IsCalcOnPayment = 'Y' AND EXISTS(")
+					.append("SELECT 1 FROM C_AllocationLine al")
+					.append(" WHERE al.C_AllocationLine_ID = iwh.C_AllocationLine_ID")
+					.append(" AND al.C_AllocationHdr_ID = ?")
+				.append(")");
+		
+		DB.executeUpdate(sqlUpdate.toString(), alloc.get_ID(), alloc.get_TrxName());
 	}
-
+	
 	private String clearInvoiceWithholdingAmtFromInvoice(MInvoice inv) {
 		// Clear invoice withholding amount
-
+		
 		if (inv.is_ValueChanged("AD_Org_ID")
 				|| inv.is_ValueChanged(MInvoice.COLUMNNAME_C_BPartner_ID)
 				|| inv.is_ValueChanged(MInvoice.COLUMNNAME_C_DocTypeTarget_ID)) {
-
+			
 			boolean thereAreCalc;
 			try {
 				thereAreCalc = thereAreCalc(inv);
@@ -783,7 +794,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				log.log(Level.SEVERE, "Error looking for calc on invoice rules", e);
 				return "Error looking for calc on invoice rules";
 			}
-
+			
 			BigDecimal curWithholdingAmt = (BigDecimal) inv.get_Value("WithholdingAmt");
 			if (thereAreCalc) {
 				if (curWithholdingAmt != null) {
@@ -794,12 +805,11 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					inv.set_CustomColumn("WithholdingAmt", Env.ZERO);
 				}
 			}
-
 		}
-
+		
 		return null;
 	}
-
+	
 	private String clearInvoiceWithholdingAmtFromInvoiceLine(MInvoiceLine invline, String type) {
 
 		if (   type.equals(IEventTopics.PO_BEFORE_NEW)
