@@ -219,4 +219,13 @@ public interface I_LCO_WithholdingType
 	  * User who updated this records
 	  */
 	public int getUpdatedBy();
+
+    /** Column name WithholdingType */
+    public static final String COLUMNNAME_WithholdingType = "WithholdingType";
+
+	/** Set Withholding Type	  */
+	public void setWithholdingType (String WithholdingType);
+
+	/** Get Withholding Type	  */
+	public String getWithholdingType();
 }

@@ -31,7 +31,7 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20211105L;
+	private static final long serialVersionUID = 20220107L;
 
     /** Standard Constructor */
     public X_LCO_WithholdingType (Properties ctx, int LCO_WithholdingType_ID, String trxName)
@@ -273,4 +273,27 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
     {
         return new KeyNamePair(get_ID(), getName());
     }
+
+	/** Municipal Economic Activity = IAE */
+	public static final String WITHHOLDINGTYPE_MunicipalEconomicActivity = "IAE";
+	/** ISLR = ISLR */
+	public static final String WITHHOLDINGTYPE_ISLR = "ISLR";
+	/** IVA = IVA */
+	public static final String WITHHOLDINGTYPE_IVA = "IVA";
+	/** Other = OTH */
+	public static final String WITHHOLDINGTYPE_Other = "OTH";
+	/** Set Withholding Type.
+		@param WithholdingType Withholding Type	  */
+	public void setWithholdingType (String WithholdingType)
+	{
+
+		set_Value (COLUMNNAME_WithholdingType, WithholdingType);
+	}
+
+	/** Get Withholding Type.
+		@return Withholding Type	  */
+	public String getWithholdingType () 
+	{
+		return (String)get_Value(COLUMNNAME_WithholdingType);
+	}
 }
