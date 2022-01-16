@@ -199,6 +199,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			line.setDocumentNo(getDocumentNo());
 			line.setDateTrx(getDateTrx());
 			line.setDateAcct(getDateAcct());
+			line.setProcessed(true);
 			
 			if (!line.isCalcOnInvoice() && !line.isCalcOnPayment())
 			{
@@ -215,6 +216,8 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 						m_processMsg = allocation.getProcessMsg();
 						return STATUS_Invalid;
 					}
+					else if (allocation != null)
+						allocation.saveEx();
 					
 					allocation = createAllocation(C_DocTypeAllocation_ID
 							, C_Currency_ID, AD_Org_ID);
@@ -274,6 +277,8 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 			m_processMsg = allocation.getProcessMsg();
 			return STATUS_Invalid;
 		}
+		else if (allocation != null)
+			allocation.saveEx();
 		
 		m_processMsg = ModelValidationEngine.get().fireDocValidate(this, ModelValidator.TIMING_AFTER_COMPLETE);
 		
