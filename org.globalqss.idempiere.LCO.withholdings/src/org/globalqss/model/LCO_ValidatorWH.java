@@ -692,7 +692,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			int ITS_ControlNoSequence_ID = docType.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ControlNoSequence_ID);
 			
 			if (ITS_ControlNoSequence_ID <= 0)
-				return "@ITS_ControlNoSequence_ID@ @NotFound@ @C_DocType@ " + docType.getNameTrl();
+				return "@ITS_ControlNoSequence_ID@ @NotFound@ @C_DocType_ID@ " + docType.getNameTrl();
 			
 			MSequence seq = new MSequence(movement.getCtx()
 					, ITS_ControlNoSequence_ID
@@ -728,7 +728,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				int ITS_ControlNoSequence_ID = docType.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_ControlNoSequence_ID);
 				
 				if (ITS_ControlNoSequence_ID <= 0)
-					return "@ITS_ControlNoSequence_ID@ @NotFound@ @C_DocType@ " + docType.getNameTrl();
+					return "@ITS_ControlNoSequence_ID@ @NotFound@ @C_DocType_ID@ " + docType.getNameTrl();
 				
 				MSequence seq = new MSequence(inv.getCtx(), ITS_ControlNoSequence_ID, inv.get_TrxName());
 				
