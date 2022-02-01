@@ -391,7 +391,8 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		if (!dt.get_ValueAsBoolean(ColumnUtils.COLUMNNAME_IsAutoAllocation)
 				||creditMemo.isPaid()
 				|| creditMemo.getReversal_ID() != 0
-				|| !creditMemo.isCreditMemo())
+				|| !creditMemo.isCreditMemo()
+				|| creditMemo.get_ValueAsInt(ColumnUtils.COLUMNNAME_ITS_InvoiceAffected_ID) <= 0)
 			return null;
 		
 		int C_DocTypeAllocation_ID = dt.get_ValueAsInt(ColumnUtils.COLUMNNAME_C_DocTypeAllocation_ID);
