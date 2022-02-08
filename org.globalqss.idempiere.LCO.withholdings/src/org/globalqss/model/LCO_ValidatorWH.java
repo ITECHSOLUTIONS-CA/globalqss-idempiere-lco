@@ -49,6 +49,8 @@ import org.compiere.acct.FactLine;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MAllocationHdr;
 import org.compiere.model.MAllocationLine;
+import org.compiere.model.MBPartner;
+import org.compiere.model.MConversionRate;
 import org.compiere.model.MDocType;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
@@ -69,6 +71,7 @@ import org.compiere.util.Msg;
 import org.compiere.util.Util;
 import org.osgi.service.event.Event;
 
+import dev.itechsolutions.exception.NoCurrencyConversionException;
 import dev.itechsolutions.util.ColumnUtils;
 
 /**
@@ -418,26 +421,45 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					|| invoiceAffected.isPaid())
 				continue;
 			
-			BigDecimal invAffectedOpenAmt = invoiceAffected.getOpenAmt();
+			MBPartner bp = new MBPartner(invoiceAffected.getCtx(), invoiceAffected.getC_BPartner_ID(), invoiceAffected.get_TrxName());
+			BigDecimal writeOffAmt = BigDecimal.ZERO;
+			
+			BigDecimal invAffectedOpenAmt = getInvoiceOpen(invoiceAffected, creditMemo.getC_Currency_ID());
+			BigDecimal realAffectedInvoiceOpen = BigDecimal.ZERO;
+			
+			if (invAffectedOpenAmt == null)
+				throw new NoCurrencyConversionException(invoiceAffected.getC_Currency_ID(), creditMemo.getC_Currency_ID()
+						, invoiceAffected.getDateInvoiced(), invoiceAffected.getC_ConversionType_ID()
+						, invoiceAffected.getAD_Client_ID(), invoiceAffected.getAD_Org_ID());
+			
 			BigDecimal amtApply = line.getLineNetAmt();
 			
 			if (amtApply.compareTo(invAffectedOpenAmt) > 0)
 				amtApply = invAffectedOpenAmt;
 			
+			if (bp.get_ValueAsInt(ColumnUtils.COLUMNNAME_C_Currency_ID) > 0)
+			{
+				realAffectedInvoiceOpen = getOpenAmt(invoiceAffected, creditMemo.getC_Currency_ID());
+				if (amtApply.compareTo(invAffectedOpenAmt) == 0)
+					writeOffAmt = realAffectedInvoiceOpen.subtract(amtApply);
+			} else
+				realAffectedInvoiceOpen = invAffectedOpenAmt;
+			
 			appliedAmt = appliedAmt.add(amtApply);
 			
 			if (alloc == null)
 				alloc = createAllocation(creditMemo.getCtx(), C_DocTypeAllocation_ID
-						, creditMemo.getDateInvoiced(), creditMemo.getDateAcct()
+						, invoiceAffected.getDateInvoiced(), creditMemo.getDateAcct()
 						, creditMemo.getC_Currency_ID(), creditMemo.getAD_Org_ID()
 						, creditMemo.get_TrxName());
 			
 			createAllocationLine(invoiceAffected, alloc
-					, amtApply, invAffectedOpenAmt.subtract(amtApply));
+					, amtApply
+					, realAffectedInvoiceOpen.subtract(amtApply).subtract(writeOffAmt), writeOffAmt);
 		}
 		
 		createAllocationLine(creditMemo, alloc
-				, appliedAmt, creditMemoOpenAmt.subtract(appliedAmt));
+				, appliedAmt, creditMemoOpenAmt.subtract(appliedAmt), BigDecimal.ZERO);
 		
 		String msg = completeAllocation(alloc);
 		
@@ -445,6 +467,30 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			creditMemo.saveEx();
 		
 		return msg;
+	}
+	
+	private static BigDecimal getOpenAmt(MInvoice invoice, int C_CurrencyTo_ID) {
+		
+		return MConversionRate.convert(invoice.getCtx(), invoice.getOpenAmt()
+				, invoice.getC_Currency_ID(), C_CurrencyTo_ID
+				, invoice.getDateInvoiced(), invoice.getC_ConversionType_ID()
+				, invoice.getAD_Client_ID(), invoice.getAD_Org_ID());
+	}
+	
+	private static BigDecimal getInvoiceOpen(MInvoice invoice, int C_CurrencyTo_ID) {
+		
+		MBPartner bp = new MBPartner(invoice.getCtx(), invoice.getC_BPartner_ID(), invoice.get_TrxName());
+		
+		if (bp.get_ValueAsInt(ColumnUtils.COLUMNNAME_C_Currency_ID) > 0)
+		{
+			BigDecimal openAmt = DB.getSQLValueBD(invoice.get_TrxName()
+					, "SELECT currencyConvertNegotiationType(ci.C_Invoice_ID, ?"
+							+ ", invoiceOpenNegotiationType(ci.C_Invoice_ID, NULL), ci.DateInvoiced)"
+						+ " FROM C_Invoice ci"
+						+ " WHERE ci.C_Invoice_ID = ?", C_CurrencyTo_ID, invoice.get_ID());
+			return openAmt;
+		} else
+			return getOpenAmt(invoice, C_CurrencyTo_ID);
 	}
 	
 	/**
@@ -468,9 +514,10 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 	 * @param invoice
 	 * @param alloc
 	 * @param amtToApply
+	 * @param writeOffAmt
 	 */
 	private static void createAllocationLine(MInvoice invoice
-			, MAllocationHdr alloc, BigDecimal amtToApply, BigDecimal openAmt) {
+			, MAllocationHdr alloc, BigDecimal amtToApply, BigDecimal openAmt, BigDecimal writeOffAmt) {
 		
 		if (alloc == null)
 			return ;
@@ -479,6 +526,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		{
 			amtToApply = amtToApply.negate();
 			openAmt = openAmt.negate();
+			writeOffAmt = writeOffAmt.negate();
 		}
 		
 		if (invoice.isCreditMemo())
@@ -488,7 +536,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		}
 		
 		MAllocationLine aLine = new MAllocationLine(alloc, amtToApply
-				, BigDecimal.ZERO, BigDecimal.ZERO
+				, BigDecimal.ZERO, writeOffAmt
 				, openAmt);
 		
 		aLine.setDocInfo(invoice.getC_BPartner_ID(), 0, invoice.get_ID());
