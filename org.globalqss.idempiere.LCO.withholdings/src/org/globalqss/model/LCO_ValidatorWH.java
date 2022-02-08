@@ -436,15 +436,20 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					, amtApply, invAffectedOpenAmt.subtract(amtApply));
 		}
 		
-		createAllocationLine(creditMemo, alloc
-				, appliedAmt, creditMemoOpenAmt.subtract(appliedAmt));
+		if (alloc != null)
+		{
+			createAllocationLine(creditMemo, alloc
+					, appliedAmt, creditMemoOpenAmt.subtract(appliedAmt));
+			
+			String msg = completeAllocation(alloc);
+			
+			if (creditMemo.testAllocation(true))
+				creditMemo.saveEx();
+			
+			return msg;
+		}
 		
-		String msg = completeAllocation(alloc);
-		
-		if (creditMemo.testAllocation(true))
-			creditMemo.saveEx();
-		
-		return msg;
+		return null;
 	}
 	
 	/**
