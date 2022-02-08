@@ -68,6 +68,7 @@ import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
+import org.compiere.util.TimeUtil;
 import org.compiere.util.Util;
 import org.osgi.service.event.Event;
 
@@ -432,6 +433,9 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 						, invoiceAffected.getDateInvoiced(), invoiceAffected.getC_ConversionType_ID()
 						, invoiceAffected.getAD_Client_ID(), invoiceAffected.getAD_Org_ID());
 			
+			if (invAffectedOpenAmt.signum() == 0)
+				continue;
+			
 			BigDecimal amtApply = line.getLineNetAmt();
 			
 			if (amtApply.compareTo(invAffectedOpenAmt) > 0)
@@ -449,7 +453,8 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			
 			if (alloc == null)
 				alloc = createAllocation(creditMemo.getCtx(), C_DocTypeAllocation_ID
-						, invoiceAffected.getDateInvoiced(), creditMemo.getDateAcct()
+						, invoiceAffected.getDateInvoiced()
+						, TimeUtil.max(creditMemo.getDateAcct(), invoiceAffected.getDateAcct())
 						, creditMemo.getC_Currency_ID(), creditMemo.getAD_Org_ID()
 						, creditMemo.get_TrxName());
 			
@@ -458,15 +463,20 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					, realAffectedInvoiceOpen.subtract(amtApply).subtract(writeOffAmt), writeOffAmt);
 		}
 		
-		createAllocationLine(creditMemo, alloc
-				, appliedAmt, creditMemoOpenAmt.subtract(appliedAmt), BigDecimal.ZERO);
+		if (alloc != null)
+		{
+			createAllocationLine(creditMemo, alloc
+					, appliedAmt, creditMemoOpenAmt.subtract(appliedAmt), BigDecimal.ZERO);
+			
+			String msg = completeAllocation(alloc);
+			
+			if (creditMemo.testAllocation(true))
+				creditMemo.saveEx();
+			
+			return msg;
+		}
 		
-		String msg = completeAllocation(alloc);
-		
-		if (creditMemo.testAllocation(true))
-			creditMemo.saveEx();
-		
-		return msg;
+		return null;
 	}
 	
 	private static BigDecimal getOpenAmt(MInvoice invoice, int C_CurrencyTo_ID) {
