@@ -148,12 +148,9 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
 				"            WHEN length(\"substring\"(ci.its_controlnumber::text, 1,\"position\"(ci.its_controlnumber::text, '-'::text))) = 0 THEN '00-'::text\n" + 
 				"            ELSE \"substring\"(ci.its_controlnumber::text, 1, \"position\"(ci.its_controlnumber::text, '-'::text))\n" + 
 				"        END || \"substring\"(ci.its_controlnumber::text, \"position\"(ci.its_controlnumber::text, '-'::text) + 1, 60), '00-00000000'::text) AS control,\n" + 
-				"    to_char(round(currencyconvert(ci.grandtotal - COALESCE(( SELECT ilsi.linetotalamt\n" + 
-				"               FROM c_invoiceline ilsi\n" + 
-				"                 JOIN c_tax txsi ON ilsi.c_tax_id = txsi.c_tax_id\n" + 
-				"              WHERE ilsi.c_invoice_id = ci.c_invoice_id), 0::numeric), ci.c_currency_id, "+p_C_Currency_ID+", ci.dateinvoiced::timestamp with time zone, ci.c_conversiontype_id, ci.ad_client_id, ci.ad_org_id), 2)\n" + 
+				"    to_char(round(currencyconvert(ci.grandtotal, ci.c_currency_id, "+p_C_Currency_ID+", ci.dateinvoiced::timestamp with time zone, ci.c_conversiontype_id, ci.ad_client_id, ci.ad_org_id), 2)\n" + 
 				"       , '99999999999999999999.99'::text) AS montodocumento,\n" +  
-				"    round(currencyconvert(its_impbase('bf'::bpchar, ci.c_invoice_id, ct.rate), ci.c_currency_id, "+p_C_Currency_ID+", ci.dateinvoiced::timestamp with time zone, ci.c_conversiontype_id, ci.ad_client_id, ci.ad_org_id)\n" + 
+				"    round(currencyconvert(its_impbase('IB'::bpchar, ci.c_invoice_id, ct.rate), ci.c_currency_id, "+p_C_Currency_ID+", ci.dateinvoiced::timestamp with time zone, ci.c_conversiontype_id, ci.ad_client_id, ci.ad_org_id)\n" + 
 				"    	, 2)::text AS baseimponible,\n" + 
 				"    to_char(abs(round(currencyconvert(iw.taxamt, vw.c_currency_id, "+p_C_Currency_ID+", ci.dateinvoiced::timestamp with time zone, ci.c_conversiontype_id, ci.ad_client_id, ci.ad_org_id), 2)), '99999999999999999999.99'::text) AS montoiva,\n" + 
 				"    \"isnull\"((( SELECT\n" + 
