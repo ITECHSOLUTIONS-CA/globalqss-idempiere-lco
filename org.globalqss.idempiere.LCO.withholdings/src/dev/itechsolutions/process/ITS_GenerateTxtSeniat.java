@@ -113,7 +113,7 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
 		"     INNER JOIN lco_withholdingtype ON lco_withholdingtype.lco_withholdingtype_id = iw.lco_withholdingtype_id \n" + 
 		"     AND lco_withholdingtype.withholdingtype = 'IVA'\n" + 
 		"     WHERE vw.docstatus IN ('CO','CL') AND vw.dateacct BETWEEN '"+p_ValidFrom+"' AND '"+p_ValidTo+"'\n" + 
-		"     AND (vw.AD_Org_ID IN (SELECT AD_Org_ID FROM AD_OrgInfo where Parent_Org_ID="+p_AD_Org_ID+") \n" + 
+		"     AND (iw.AD_Org_ID IN (SELECT AD_Org_ID FROM AD_OrgInfo where Parent_Org_ID="+p_AD_Org_ID+") \n" + 
 		"     OR vw.AD_Org_ID="+p_AD_Org_ID+")))";
 		
 		BigDecimal totalAmt = DB.getSQLValueBDEx(get_TrxName(), totalAmtSql);
