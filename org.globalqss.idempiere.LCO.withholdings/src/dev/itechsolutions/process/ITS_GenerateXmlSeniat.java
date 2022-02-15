@@ -74,7 +74,7 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 				"join c_invoice i on iw.c_invoice_id = i.c_invoice_id \n" + 
 				"where vw.docstatus in ('CO','CL') and lco_withholdingtype.\"withholdingtype\" = 'ISLR' \n" + 
 				"and vw.dateacct between '"+p_ValidFrom+"' and '"+p_ValidTo+"'\n" + 
-				"and (vw.AD_Org_ID in (select AD_Org_ID from AD_OrgInfo \n" + 
+				"and (iw.AD_Org_ID in (select AD_Org_ID from AD_OrgInfo \n" + 
 				"	where Parent_Org_ID = "+p_AD_Org_ID+")\n" + 
 				"	or vw.AD_Org_ID = "+p_AD_Org_ID+"))";
 		BigDecimal totalAmt = DB.getSQLValueBDEx(get_TrxName(), sqlTotalAmt);
