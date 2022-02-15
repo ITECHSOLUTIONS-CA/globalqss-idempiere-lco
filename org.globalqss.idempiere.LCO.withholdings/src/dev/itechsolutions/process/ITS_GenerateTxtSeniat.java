@@ -192,7 +192,7 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
 		
 		sql.append(" WHERE (iw.ad_org_id=").append(p_AD_Org_ID).append(" OR ainf.parent_org_id= ").append(p_AD_Org_ID).append(")")
 		.append(" AND ci.issotrx = "+(p_TypeOperation.equals("V")?"'Y'":"'N'"))
-		.append(" AND iw.datetrx between '").append(p_ValidFrom).append("' AND '").append(p_ValidTo).append("'");
+		.append(" AND iw.dateacct between '").append(p_ValidFrom).append("' AND '").append(p_ValidTo).append("'");
 	
 		//
 		PreparedStatement pstmt = null;
