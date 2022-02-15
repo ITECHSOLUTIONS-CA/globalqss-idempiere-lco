@@ -32,6 +32,7 @@ public class ColumnUtils {
 	public static final String COLUMNNAME_IsOverWriteDocNoWhenReversing = "IsOverWriteDocNoWhenReversing";
 	public static final String COLUMNNAME_ITS_ReverseSequence_ID = "ITS_ReverseSequence_ID";
 	public static final String COLUMNNAME_ITS_InvoiceAffected_ID = "ITS_InvoiceAffected_ID";
+	public static final String COLUMNNAME_C_Currency_ID = "C_Currency_ID";
 	//-----------------------------End of Column Names-----------------------------------
 	
 	//------------------------------Context Variables------------------------------------
