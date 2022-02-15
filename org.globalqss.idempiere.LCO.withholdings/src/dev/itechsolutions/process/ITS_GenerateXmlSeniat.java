@@ -45,8 +45,7 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 	 */
 	@Override
 	protected void prepare() {
-		// TODO Auto-generated method stub
-		
+	
 		p_Record_ID = getRecord_ID();
 		p_LVE_generateXML_ID = p_Record_ID;
 		generateXML = new X_ITS_generateXML(getCtx(), p_LVE_generateXML_ID, get_TrxName());
@@ -62,6 +61,7 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 		
 	}
 	
+	@SuppressWarnings("resource")
 	@Override
 	protected String doIt() throws Exception {
 		
@@ -85,7 +85,7 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 		
 		
 		String sql="";
-		Element root=new Element("RelacionRetencionesISLR");
+		Element root= null;
 		
 		String dia, mes , anio;
 		Calendar date = new GregorianCalendar();
@@ -102,7 +102,6 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 		sql=("SELECT *, to_char(fecha,'DD/MM/YYYY') as fechaoperacion "
 				+ " FROM its_xmlislr " 
 				+ " WHERE (" 
-				//+ " lve_xmlislr.org = '" + p_AD_Org_ID + "' AND "
 					+ " its_xmlislr.org IN  (SELECT DISTINCT Node_ID FROM getnodes("+p_AD_Org_ID+",(SELECT AD_Tree_ID FROM AD_Tree WHERE TreeType ='OO' "
 					+ "AND AD_Client_ID="+getAD_Client_ID()+"),"+getAD_Client_ID()+") AS N (Parent_ID numeric,Node_ID numeric) " 
 					+ " WHERE Parent_ID = "+p_AD_Org_ID+") OR its_xmlislr.org="+p_AD_Org_ID+")"		
@@ -118,6 +117,9 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 		
 		while (rs.next())
 		{
+				
+				root = new Element("RelacionRetencionesISLR");
+			
 				root.setAttribute("RifAgente", rs.getString(8).trim());
 				root.setAttribute("Periodo", rs.getString(9).trim());
 			    		    
@@ -137,12 +139,7 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 					 detalleRetencion.addContent(new Element("NumeroControl").setText(rs.getString(3).trim()));
 				 else
 					 detalleRetencion.addContent(new Element("NumeroControl").setText("Vacio"));
-				 /* commented by Adonis Castellanos 11-09-2020 
-				 if (rs.getString(11) != null)
-					 detalleRetencion.addContent(new Element("FechaOperacion").setText(rs.getString(11).trim()));
-				 else
-					 detalleRetencion.addContent(new Element("FechaOperacion").setText("Vacio"));
-			    */
+				 
 				 if (rs.getString(4) != null)
 					 detalleRetencion.addContent(new Element("CodigoConcepto").setText(rs.getString(4).trim()));
 				 else
@@ -159,58 +156,59 @@ public class ITS_GenerateXmlSeniat extends SvrProcess {
 		catch ( Exception e )
         {
             System.out.println(e.getMessage());
+        }finally {
+        	DB.close(rs,pstmt);
         }
-		
-		
-		pstmt.close();
-		
-	 //Creamos el documento
-		Document doc=new Document(root);
-		
-		try{	
-		      Format format = Format.getPrettyFormat();
-		      format.setEncoding("ISO-8859-1");
-		      log.log(Level.INFO, "Format XML");
-		      XMLOutputter out=new XMLOutputter();
-		      out.setFormat(format);
-		      out.output(doc,file);
-		      file.flush();
-		      file.close();
-			
-		    }catch(Exception e){e.printStackTrace();}
-		
-		File archivoXML=new File(fileNameXML);
-		
-		if (!rs.equals(null))
+	
+		if(root!=null)
 		{
-			int  AD_Table_ID = MTable.getTable_ID(X_ITS_generateXML.Table_Name);
-			log.log(Level.INFO, "AD_Table_ID: " + AD_Table_ID + " - Record_ID: " + p_Record_ID);
-			MAttachment attach =  MAttachment.get(getCtx(),AD_Table_ID,p_Record_ID);
-		
-			if (attach == null ) {
-				log.info("attach == null: ");
-				log.log(Level.INFO, "AD_Table_ID: " + AD_Table_ID + " - Record_ID: " + p_Record_ID);
-				attach = new  MAttachment(getCtx(),AD_Table_ID ,p_Record_ID,get_TrxName());
-				attach.addEntry(archivoXML);
-				attach.save();
-				log.info("attach.save");
-			} else {
-				log.info("attach != null: ");
-				log.log(Level.INFO, "AD_Table_ID: " + AD_Table_ID + " - Record_ID: " + p_Record_ID);
-				int index = (attach.getEntryCount()-1);
-				MAttachmentEntry entry = attach.getEntry(index) ;
-				String renamed = nombreArch + fecha + "_old" + ".xml";
-				entry.setName(renamed);
-				attach.save();
-				//agrega el nuevo archivo ya q el anterior ha sido renombrado
-				attach.addEntry(archivoXML);
-				attach.save();
-				}
 			
-			return "Archivo Generado y Anexado:  -> " + fileNameXML + ", Refrescar Ventana y revisar en Anexos.	";
+			//Creamos el documento
+			Document doc=new Document(root);
 			
-		} else
+			try{	
+			      Format format = Format.getPrettyFormat();
+			      format.setEncoding("ISO-8859-1");
+			      log.log(Level.INFO, "Format XML");
+			      XMLOutputter out=new XMLOutputter();
+			      out.setFormat(format);
+			      out.output(doc,file);
+			      file.flush();
+			      file.close();
+				
+			    }catch(Exception e){e.printStackTrace();}
+			
+			File archivoXML=new File(fileNameXML);
+				
+			
+				int  AD_Table_ID = MTable.getTable_ID(X_ITS_generateXML.Table_Name);
+				log.log(Level.INFO, "AD_Table_ID: " + AD_Table_ID + " - Record_ID: " + p_Record_ID);
+				MAttachment attach =  MAttachment.get(getCtx(),AD_Table_ID,p_Record_ID);
+			
+				if (attach == null ) {
+					log.info("attach == null: ");
+					log.log(Level.INFO, "AD_Table_ID: " + AD_Table_ID + " - Record_ID: " + p_Record_ID);
+					attach = new  MAttachment(getCtx(),AD_Table_ID ,p_Record_ID,get_TrxName());
+					attach.addEntry(archivoXML);
+					attach.save();
+					log.info("attach.save");
+				} else {
+					log.info("attach != null: ");
+					log.log(Level.INFO, "AD_Table_ID: " + AD_Table_ID + " - Record_ID: " + p_Record_ID);
+					int index = (attach.getEntryCount()-1);
+					MAttachmentEntry entry = attach.getEntry(index) ;
+					String renamed = nombreArch + fecha + "_old" + ".xml";
+					entry.setName(renamed);
+					attach.save();
+					//agrega el nuevo archivo ya q el anterior ha sido renombrado
+					attach.addEntry(archivoXML);
+					attach.save();
+					}
+				
+				return "Archivo Generado y Anexado:  -> " + fileNameXML + ", Refrescar Ventana y revisar en Anexos.	";	
+		}else {
 			return "El Archivo no pudo ser Generado porque no hay retenciones ISLR para este periodo, desde: " + p_ValidFrom + ", hasta: " + p_ValidTo + ".";
-			
 		}
+			
+	}
 }

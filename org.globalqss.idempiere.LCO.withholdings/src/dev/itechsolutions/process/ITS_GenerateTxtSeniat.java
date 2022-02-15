@@ -122,7 +122,6 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
 			generateTXT.saveEx(get_TrxName());
 		}
 		
-		
 		sql.append("SELECT replace(ainf.taxid::text, '-'::text, ''::text) AS rifempresa,\n" + 
 				"    btrim(to_char(date_part('year'::text, iw.dateacct), '0000'::text)) || btrim(to_char(date_part('month'::text, iw.dateacct), '00'::text)) AS periodo,\n" + 
 				"    (((to_char(date_part('year'::text, ci.dateinvoiced), '0000'::text) || '-'::text) || btrim(to_char(date_part('month'::text, ci.dateinvoiced), '00'::text))) || '-'::text) || btrim(to_char(date_part('day'::text, ci.dateinvoiced), '00'::text)) AS fechadocumento,\n" + 
@@ -201,7 +200,7 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
 		
 		log.log(Level.INFO, "SQL: " + sql);
 		int cont = 0;
-		//BufferedWriter writer = new BufferedWriter(new FileWriter(archivo));
+		
 		try {
 			pstmt = DB.prepareStatement(sql.toString(), get_TrxName());
 			rs = pstmt.executeQuery();
@@ -223,10 +222,10 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
 							.append(Optional.ofNullable(rs.getString(14)).orElse("null").trim()+"	")//+rs.getString(14).trim()+"	"
 							.append(Optional.ofNullable(rs.getString(15)).orElse("null").trim()+"	")//+rs.getString(15).trim()+"	"
 							.append(Optional.ofNullable(rs.getString(16)).orElse("null").trim());//+rs.getString(16).trim())*/
+			
 			contentTXT.append("\n");
 			cont ++;
 			}
-			
 			
 		}
 		catch ( Exception e )
@@ -250,7 +249,7 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
             throw new AdempiereException("IOException: "+ioe);
 		}
 		
-		if (contentTXT !=null && contentTXT.toString() !="")
+		if (contentTXT !=null && !contentTXT.toString().equals(""))
 		{
 			int  AD_Table_ID = MTable.getTable_ID(X_ITS_generateTXT.Table_Name);
 			log.log(Level.INFO, "AD_Table_ID: " + AD_Table_ID + " - Record_ID: " + p_Record_ID);
@@ -276,7 +275,7 @@ public class ITS_GenerateTxtSeniat extends SvrProcess {
 				attach.addEntry(archivo);
 				attach.save();
 				}
-			return "Archivo Generado y Anexado:  -> " + fileNameTXT + ", "+cont+"Retenciónes Procesadas, Refrescar Ventana y revisar en Anexos.	";
+			return "Archivo Generado y Anexado:  -> " + fileNameTXT + ", "+cont+" Retenciónes Procesadas, Refrescar Ventana y revisar en Anexos.	";
 			
 		} else
 			return "El Archivo no pudo ser Generado porque no hay retenciones de " + tipoOperacion + " para este periodo, desde: " + p_ValidFrom + ", hasta: " + p_ValidTo + ".";
