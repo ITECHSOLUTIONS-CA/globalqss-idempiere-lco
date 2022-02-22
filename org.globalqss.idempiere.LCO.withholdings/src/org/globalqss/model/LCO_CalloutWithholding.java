@@ -280,7 +280,10 @@ public class LCO_CalloutWithholding implements IColumnCalloutFactory
 				if (MInvoice.get(ctx, inv_id).isCreditMemo())
 					sumtaxamt = sumtaxamt.negate();
 			}
-
+			
+			if (BigDecimal.ZERO.compareTo(sumtaxamt) == 0)
+				return "";
+			
 			BigDecimal newPayAmt = prevPayAmt.add(prevWriteOff).subtract(sumtaxamt);
 			if (newPayAmt.compareTo(prevPayAmt) != 0)
 				mTab.setValue(payAmtColumn, newPayAmt);
