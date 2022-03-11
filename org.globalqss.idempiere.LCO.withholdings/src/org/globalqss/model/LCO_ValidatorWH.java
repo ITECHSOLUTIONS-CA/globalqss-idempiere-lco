@@ -419,7 +419,8 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				continue;
 			
 			BigDecimal invAffectedOpenAmt = invoiceAffected.getOpenAmt();
-			BigDecimal amtApply = line.getLineNetAmt();
+			//BigDecimal amtApply = line.getLineNetAmt();
+			BigDecimal amtApply = line.getLineTotalAmt();
 			
 			if (amtApply.compareTo(invAffectedOpenAmt) > 0)
 				amtApply = invAffectedOpenAmt;
