@@ -32,6 +32,7 @@ import org.compiere.model.PO;
 import org.compiere.util.Env;
 
 import dev.itechsolutions.model.ITSMGenerateTXT;
+import dev.itechsolutions.model.ITSMGenerateXML;
 import dev.itechsolutions.model.MITSVoucherWithholding;
 import dev.itechsolutions.model.MMunicipality;
 import dev.itechsolutions.model.MParish;
@@ -64,6 +65,8 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return MParish.class;
 		if (ITSMGenerateTXT.Table_Name.equals(tableName))
 			return ITSMGenerateTXT.class;
+		if(ITSMGenerateXML.Table_Name.equals(tableName))
+			return ITSMGenerateXML.class;
 		return null;
 	}
 
@@ -93,6 +96,8 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return new MParish(Env.getCtx(), Record_ID, trxName);
 		if(ITSMGenerateTXT.Table_Name.equals(tableName))
 			return new ITSMGenerateTXT(Env.getCtx(), Record_ID, trxName);
+		if (ITSMGenerateXML.Table_Name.equals(tableName))
+			return new ITSMGenerateXML(Env.getCtx(), Record_ID, trxName);
 		return null;
 	}
 
@@ -122,6 +127,8 @@ public class LCO_ModelFactoryWH implements IModelFactory {
 			return new MParish(Env.getCtx(), rs, trxName);
 		if (ITSMGenerateTXT.Table_Name.equals(tableName))
 			return new ITSMGenerateTXT(Env.getCtx(), rs, trxName);
+		if (ITSMGenerateXML.Table_Name.equals(tableName))
+			return new ITSMGenerateXML(Env.getCtx(), rs, trxName);
 		return null;
 	}
 }
