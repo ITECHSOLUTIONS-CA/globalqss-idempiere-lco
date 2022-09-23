@@ -29,13 +29,14 @@ public class ITSMGenerateTXT extends X_ITS_generateTXT {
 		String where = "ITS_GenerateTxT.AD_Client_ID = ? "
 				+ "AND ITS_GenerateTxT.AD_Org_ID = ? "
 				+ "AND ITS_GenerateTxT.ITS_TypeOperation = ? "
+				+ "AND ITS_GenerateTxT.ITS_generateTXT_ID <> ? "
 				+ "AND (ITS_GenerateTxT.ValidFrom BETWEEN ? AND ? "
 				+ "OR ITS_GenerateTxT.ValidTo BETWEEN ? AND ?) ";
 		//
 		ITSMGenerateTXT data = new Query(getCtx(), ITSMGenerateTXT.Table_Name, where, get_TrxName())
 				.setOnlyActiveRecords(true)
 				.setParameters(getAD_Client_ID(), getAD_Org_ID()
-						, getITS_TypeOperation()
+						, getITS_TypeOperation(), getITS_generateTXT_ID()
 						, getValidFrom(), getValidTo()
 						, getValidFrom(), getValidTo())
 				.first();
