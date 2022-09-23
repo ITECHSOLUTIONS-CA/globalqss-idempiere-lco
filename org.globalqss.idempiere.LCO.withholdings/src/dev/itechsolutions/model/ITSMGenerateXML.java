@@ -24,12 +24,14 @@ public class ITSMGenerateXML extends X_ITS_generateXML {
 	{
 		String where = "ITS_GenerateXML.AD_Client_ID = ? "
 				+ "AND ITS_GenerateXML.AD_Org_ID = ? "
+				+ "AND ITS_generateXML.ITS_generateXML_ID <> ? "
 				+ "AND (ITS_GenerateXML.ValidFrom BETWEEN ? AND ? "
 				+ "OR ITS_GenerateXML.ValidTo BETWEEN ? AND ?) ";
 		//
 		ITSMGenerateXML data = new Query(getCtx(), ITSMGenerateXML.Table_Name, where, get_TrxName())
 				.setOnlyActiveRecords(true)
-				.setParameters(getAD_Client_ID(), getAD_Org_ID() 
+				.setParameters(getAD_Client_ID(), getAD_Org_ID()
+						, getITS_generateXML_ID()
 						, getValidFrom(), getValidTo()
 						, getValidFrom(), getValidTo())
 				.first();
