@@ -16,8 +16,8 @@ Require-Bundle: org.adempiere.base;bundle-version="8.2.0",
  zcommon;bundle-version="9.5.0"
 Export-Package: org.globalqss.model,
  org.globalqss.process
-Service-Component: OSGI-INF/lco_modelfactorywh.xml,OSGI-INF/lco_processfactorywh.xml,OSGI-INF/lco_calloutfactorywh.xml,OSGI-INF/lco_validatorwh.xml,OSGI-INF/DisplayTypeFactory.xml,
- OSGI-INF/EditorFactory.xml
+Service-Component: OSGI-INF/lco_modelfactorywh.xml,OSGI-INF/lco_processfactorywh.xml,OSGI-INF/lco_calloutfactorywh.xml,OSGI-INF/lco_validatorwh.xml,OSGI-INF/DisplayTypeFactory.xml,OSGI-INF/EditorFactory.xml,
+ OSGI-INF/DocFactory.xml
 Import-Package: org.osgi.service.event
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
