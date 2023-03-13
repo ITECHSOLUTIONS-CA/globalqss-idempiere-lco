@@ -24,19 +24,31 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Model for LCO_TaxPayerType
  *  @author iDempiere (generated) 
- *  @version Release 3.1 - $Id$ */
+ *  @version Release 10 - $Id$ */
+@org.adempiere.base.Model(table="LCO_TaxPayerType")
 public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Persistent 
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20151110L;
+	private static final long serialVersionUID = 20230306L;
 
     /** Standard Constructor */
     public X_LCO_TaxPayerType (Properties ctx, int LCO_TaxPayerType_ID, String trxName)
     {
       super (ctx, LCO_TaxPayerType_ID, trxName);
+      /** if (LCO_TaxPayerType_ID == 0)
+        {
+			setLCO_TaxPayerType_ID (0);
+			setName (null);
+        } */
+    }
+
+    /** Standard Constructor */
+    public X_LCO_TaxPayerType (Properties ctx, int LCO_TaxPayerType_ID, String trxName, String ... virtualColumns)
+    {
+      super (ctx, LCO_TaxPayerType_ID, trxName, virtualColumns);
       /** if (LCO_TaxPayerType_ID == 0)
         {
 			setLCO_TaxPayerType_ID (0);
@@ -67,15 +79,14 @@ public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Pers
 
     public String toString()
     {
-      StringBuffer sb = new StringBuffer ("X_LCO_TaxPayerType[")
-        .append(get_ID()).append("]");
+      StringBuilder sb = new StringBuilder ("X_LCO_TaxPayerType[")
+        .append(get_ID()).append(",Name=").append(getName()).append("]");
       return sb.toString();
     }
 
 	/** Set Description.
-		@param Description 
-		Optional short description of the record
-	  */
+		@param Description Optional short description of the record
+	*/
 	public void setDescription (String Description)
 	{
 		set_Value (COLUMNNAME_Description, Description);
@@ -84,15 +95,14 @@ public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Pers
 	/** Get Description.
 		@return Optional short description of the record
 	  */
-	public String getDescription () 
+	public String getDescription()
 	{
 		return (String)get_Value(COLUMNNAME_Description);
 	}
 
 	/** Set Default.
-		@param IsDefault 
-		Default value
-	  */
+		@param IsDefault Default value
+	*/
 	public void setIsDefault (boolean IsDefault)
 	{
 		set_Value (COLUMNNAME_IsDefault, Boolean.valueOf(IsDefault));
@@ -101,7 +111,7 @@ public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Pers
 	/** Get Default.
 		@return Default value
 	  */
-	public boolean isDefault () 
+	public boolean isDefault()
 	{
 		Object oo = get_Value(COLUMNNAME_IsDefault);
 		if (oo != null) 
@@ -114,18 +124,19 @@ public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Pers
 	}
 
 	/** Set Tax Payer Type.
-		@param LCO_TaxPayerType_ID Tax Payer Type	  */
+		@param LCO_TaxPayerType_ID Tax Payer Type
+	*/
 	public void setLCO_TaxPayerType_ID (int LCO_TaxPayerType_ID)
 	{
-		if (LCO_TaxPayerType_ID < 1) 
+		if (LCO_TaxPayerType_ID < 1)
 			set_ValueNoCheck (COLUMNNAME_LCO_TaxPayerType_ID, null);
-		else 
+		else
 			set_ValueNoCheck (COLUMNNAME_LCO_TaxPayerType_ID, Integer.valueOf(LCO_TaxPayerType_ID));
 	}
 
 	/** Get Tax Payer Type.
 		@return Tax Payer Type	  */
-	public int getLCO_TaxPayerType_ID () 
+	public int getLCO_TaxPayerType_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_LCO_TaxPayerType_ID);
 		if (ii == null)
@@ -134,7 +145,8 @@ public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Pers
 	}
 
 	/** Set LCO_TaxPayerType_UU.
-		@param LCO_TaxPayerType_UU LCO_TaxPayerType_UU	  */
+		@param LCO_TaxPayerType_UU LCO_TaxPayerType_UU
+	*/
 	public void setLCO_TaxPayerType_UU (String LCO_TaxPayerType_UU)
 	{
 		set_Value (COLUMNNAME_LCO_TaxPayerType_UU, LCO_TaxPayerType_UU);
@@ -142,15 +154,14 @@ public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Pers
 
 	/** Get LCO_TaxPayerType_UU.
 		@return LCO_TaxPayerType_UU	  */
-	public String getLCO_TaxPayerType_UU () 
+	public String getLCO_TaxPayerType_UU()
 	{
 		return (String)get_Value(COLUMNNAME_LCO_TaxPayerType_UU);
 	}
 
 	/** Set Name.
-		@param Name 
-		Alphanumeric identifier of the entity
-	  */
+		@param Name Alphanumeric identifier of the entity
+	*/
 	public void setName (String Name)
 	{
 		set_Value (COLUMNNAME_Name, Name);
@@ -159,7 +170,7 @@ public class X_LCO_TaxPayerType extends PO implements I_LCO_TaxPayerType, I_Pers
 	/** Get Name.
 		@return Alphanumeric identifier of the entity
 	  */
-	public String getName () 
+	public String getName()
 	{
 		return (String)get_Value(COLUMNNAME_Name);
 	}

@@ -24,19 +24,33 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Model for LCO_WithholdingType
  *  @author iDempiere (generated) 
- *  @version Release 3.1 - $Id$ */
+ *  @version Release 10 - $Id$ */
+@org.adempiere.base.Model(table="LCO_WithholdingType")
 public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, I_Persistent 
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20151110L;
+	private static final long serialVersionUID = 20230309L;
 
     /** Standard Constructor */
     public X_LCO_WithholdingType (Properties ctx, int LCO_WithholdingType_ID, String trxName)
     {
       super (ctx, LCO_WithholdingType_ID, trxName);
+      /** if (LCO_WithholdingType_ID == 0)
+        {
+			setIsSOTrx (false);
+// N
+			setLCO_WithholdingType_ID (0);
+			setName (null);
+        } */
+    }
+
+    /** Standard Constructor */
+    public X_LCO_WithholdingType (Properties ctx, int LCO_WithholdingType_ID, String trxName, String ... virtualColumns)
+    {
+      super (ctx, LCO_WithholdingType_ID, trxName, virtualColumns);
       /** if (LCO_WithholdingType_ID == 0)
         {
 			setIsSOTrx (false);
@@ -69,15 +83,125 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 
     public String toString()
     {
-      StringBuffer sb = new StringBuffer ("X_LCO_WithholdingType[")
-        .append(get_ID()).append("]");
+      StringBuilder sb = new StringBuilder ("X_LCO_WithholdingType[")
+        .append(get_ID()).append(",Name=").append(getName()).append("]");
       return sb.toString();
     }
 
-	/** Set Counter.
-		@param Counter 
-		Count Value
+	public org.compiere.model.I_C_BPartner getC_BPartner() throws RuntimeException
+	{
+		return (org.compiere.model.I_C_BPartner)MTable.get(getCtx(), org.compiere.model.I_C_BPartner.Table_ID)
+			.getPO(getC_BPartner_ID(), get_TrxName());
+	}
+
+	/** Set Business Partner.
+		@param C_BPartner_ID Identifies a Business Partner
+	*/
+	public void setC_BPartner_ID (int C_BPartner_ID)
+	{
+		if (C_BPartner_ID < 1)
+			set_Value (COLUMNNAME_C_BPartner_ID, null);
+		else
+			set_Value (COLUMNNAME_C_BPartner_ID, Integer.valueOf(C_BPartner_ID));
+	}
+
+	/** Get Business Partner.
+		@return Identifies a Business Partner
 	  */
+	public int getC_BPartner_ID()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_BPartner_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_Charge getC_Charge() throws RuntimeException
+	{
+		return (org.compiere.model.I_C_Charge)MTable.get(getCtx(), org.compiere.model.I_C_Charge.Table_ID)
+			.getPO(getC_Charge_ID(), get_TrxName());
+	}
+
+	/** Set Charge.
+		@param C_Charge_ID Additional document charges
+	*/
+	public void setC_Charge_ID (int C_Charge_ID)
+	{
+		if (C_Charge_ID < 1)
+			set_ValueNoCheck (COLUMNNAME_C_Charge_ID, null);
+		else
+			set_ValueNoCheck (COLUMNNAME_C_Charge_ID, Integer.valueOf(C_Charge_ID));
+	}
+
+	/** Get Charge.
+		@return Additional document charges
+	  */
+	public int getC_Charge_ID()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_Charge_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_Currency getC_Currency() throws RuntimeException
+	{
+		return (org.compiere.model.I_C_Currency)MTable.get(getCtx(), org.compiere.model.I_C_Currency.Table_ID)
+			.getPO(getC_Currency_ID(), get_TrxName());
+	}
+
+	/** Set Currency.
+		@param C_Currency_ID The Currency for this record
+	*/
+	public void setC_Currency_ID (int C_Currency_ID)
+	{
+		if (C_Currency_ID < 1)
+			set_Value (COLUMNNAME_C_Currency_ID, null);
+		else
+			set_Value (COLUMNNAME_C_Currency_ID, Integer.valueOf(C_Currency_ID));
+	}
+
+	/** Get Currency.
+		@return The Currency for this record
+	  */
+	public int getC_Currency_ID()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_Currency_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_DocType getC_DocTypeDeclare() throws RuntimeException
+	{
+		return (org.compiere.model.I_C_DocType)MTable.get(getCtx(), org.compiere.model.I_C_DocType.Table_ID)
+			.getPO(getC_DocTypeDeclare_ID(), get_TrxName());
+	}
+
+	/** Set Document Type Declare.
+		@param C_DocTypeDeclare_ID Document Type Declare
+	*/
+	public void setC_DocTypeDeclare_ID (int C_DocTypeDeclare_ID)
+	{
+		if (C_DocTypeDeclare_ID < 1)
+			set_Value (COLUMNNAME_C_DocTypeDeclare_ID, null);
+		else
+			set_Value (COLUMNNAME_C_DocTypeDeclare_ID, Integer.valueOf(C_DocTypeDeclare_ID));
+	}
+
+	/** Get Document Type Declare.
+		@return Document Type Declare	  */
+	public int getC_DocTypeDeclare_ID()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_DocTypeDeclare_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Counter.
+		@param Counter Count Value
+	*/
 	public void setCounter (int Counter)
 	{
 		throw new IllegalArgumentException ("Counter is virtual column");	}
@@ -85,7 +209,7 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	/** Get Counter.
 		@return Count Value
 	  */
-	public int getCounter () 
+	public int getCounter()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_Counter);
 		if (ii == null)
@@ -94,9 +218,8 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	}
 
 	/** Set Description.
-		@param Description 
-		Optional short description of the record
-	  */
+		@param Description Optional short description of the record
+	*/
 	public void setDescription (String Description)
 	{
 		set_Value (COLUMNNAME_Description, Description);
@@ -105,15 +228,14 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	/** Get Description.
 		@return Optional short description of the record
 	  */
-	public String getDescription () 
+	public String getDescription()
 	{
 		return (String)get_Value(COLUMNNAME_Description);
 	}
 
 	/** Set Sales Transaction.
-		@param IsSOTrx 
-		This is a Sales Transaction
-	  */
+		@param IsSOTrx This is a Sales Transaction
+	*/
 	public void setIsSOTrx (boolean IsSOTrx)
 	{
 		set_Value (COLUMNNAME_IsSOTrx, Boolean.valueOf(IsSOTrx));
@@ -122,7 +244,7 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	/** Get Sales Transaction.
 		@return This is a Sales Transaction
 	  */
-	public boolean isSOTrx () 
+	public boolean isSOTrx()
 	{
 		Object oo = get_Value(COLUMNNAME_IsSOTrx);
 		if (oo != null) 
@@ -135,18 +257,19 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	}
 
 	/** Set Withholding Type.
-		@param LCO_WithholdingType_ID Withholding Type	  */
+		@param LCO_WithholdingType_ID Withholding Type
+	*/
 	public void setLCO_WithholdingType_ID (int LCO_WithholdingType_ID)
 	{
-		if (LCO_WithholdingType_ID < 1) 
+		if (LCO_WithholdingType_ID < 1)
 			set_ValueNoCheck (COLUMNNAME_LCO_WithholdingType_ID, null);
-		else 
+		else
 			set_ValueNoCheck (COLUMNNAME_LCO_WithholdingType_ID, Integer.valueOf(LCO_WithholdingType_ID));
 	}
 
 	/** Get Withholding Type.
 		@return Withholding Type	  */
-	public int getLCO_WithholdingType_ID () 
+	public int getLCO_WithholdingType_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_LCO_WithholdingType_ID);
 		if (ii == null)
@@ -155,7 +278,8 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	}
 
 	/** Set LCO_WithholdingType_UU.
-		@param LCO_WithholdingType_UU LCO_WithholdingType_UU	  */
+		@param LCO_WithholdingType_UU LCO_WithholdingType_UU
+	*/
 	public void setLCO_WithholdingType_UU (String LCO_WithholdingType_UU)
 	{
 		set_Value (COLUMNNAME_LCO_WithholdingType_UU, LCO_WithholdingType_UU);
@@ -163,15 +287,14 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 
 	/** Get LCO_WithholdingType_UU.
 		@return LCO_WithholdingType_UU	  */
-	public String getLCO_WithholdingType_UU () 
+	public String getLCO_WithholdingType_UU()
 	{
 		return (String)get_Value(COLUMNNAME_LCO_WithholdingType_UU);
 	}
 
 	/** Set Name.
-		@param Name 
-		Alphanumeric identifier of the entity
-	  */
+		@param Name Alphanumeric identifier of the entity
+	*/
 	public void setName (String Name)
 	{
 		set_Value (COLUMNNAME_Name, Name);
@@ -180,7 +303,7 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
 	/** Get Name.
 		@return Alphanumeric identifier of the entity
 	  */
-	public String getName () 
+	public String getName()
 	{
 		return (String)get_Value(COLUMNNAME_Name);
 	}
@@ -192,4 +315,28 @@ public class X_LCO_WithholdingType extends PO implements I_LCO_WithholdingType, 
     {
         return new KeyNamePair(get_ID(), getName());
     }
+
+	/** Municipal Economic Activity = IAE */
+	public static final String WITHHOLDINGTYPE_MunicipalEconomicActivity = "IAE";
+	/** ISLR = ISLR */
+	public static final String WITHHOLDINGTYPE_ISLR = "ISLR";
+	/** IVA = IVA */
+	public static final String WITHHOLDINGTYPE_IVA = "IVA";
+	/** Other = OTH */
+	public static final String WITHHOLDINGTYPE_Other = "OTH";
+	/** Set Withholding Type.
+		@param WithholdingType Withholding Type
+	*/
+	public void setWithholdingType (String WithholdingType)
+	{
+
+		set_Value (COLUMNNAME_WithholdingType, WithholdingType);
+	}
+
+	/** Get Withholding Type.
+		@return Withholding Type	  */
+	public String getWithholdingType()
+	{
+		return (String)get_Value(COLUMNNAME_WithholdingType);
+	}
 }

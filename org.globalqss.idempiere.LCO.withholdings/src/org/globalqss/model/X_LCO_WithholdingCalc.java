@@ -26,19 +26,32 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Model for LCO_WithholdingCalc
  *  @author iDempiere (generated) 
- *  @version Release 3.1 - $Id$ */
+ *  @version Release 10 - $Id$ */
+@org.adempiere.base.Model(table="LCO_WithholdingCalc")
 public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, I_Persistent 
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20151110L;
+	private static final long serialVersionUID = 20230307L;
 
     /** Standard Constructor */
     public X_LCO_WithholdingCalc (Properties ctx, int LCO_WithholdingCalc_ID, String trxName)
     {
       super (ctx, LCO_WithholdingCalc_ID, trxName);
+      /** if (LCO_WithholdingCalc_ID == 0)
+        {
+			setBaseType (null);
+			setLCO_WithholdingCalc_ID (0);
+			setName (null);
+        } */
+    }
+
+    /** Standard Constructor */
+    public X_LCO_WithholdingCalc (Properties ctx, int LCO_WithholdingCalc_ID, String trxName, String ... virtualColumns)
+    {
+      super (ctx, LCO_WithholdingCalc_ID, trxName, virtualColumns);
       /** if (LCO_WithholdingCalc_ID == 0)
         {
 			setBaseType (null);
@@ -70,21 +83,22 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 
     public String toString()
     {
-      StringBuffer sb = new StringBuffer ("X_LCO_WithholdingCalc[")
-        .append(get_ID()).append("]");
+      StringBuilder sb = new StringBuilder ("X_LCO_WithholdingCalc[")
+        .append(get_ID()).append(",Name=").append(getName()).append("]");
       return sb.toString();
     }
 
-	/** Set AmountRefunded.
-		@param AmountRefunded AmountRefunded	  */
+	/** Set Amount Refunded.
+		@param AmountRefunded Amount Refunded
+	*/
 	public void setAmountRefunded (BigDecimal AmountRefunded)
 	{
 		set_Value (COLUMNNAME_AmountRefunded, AmountRefunded);
 	}
 
-	/** Get AmountRefunded.
-		@return AmountRefunded	  */
-	public BigDecimal getAmountRefunded () 
+	/** Get Amount Refunded.
+		@return Amount Refunded	  */
+	public BigDecimal getAmountRefunded()
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_AmountRefunded);
 		if (bd == null)
@@ -99,7 +113,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	/** Tax = T */
 	public static final String BASETYPE_Tax = "T";
 	/** Set Base Type.
-		@param BaseType Base Type	  */
+		@param BaseType Base Type
+	*/
 	public void setBaseType (String BaseType)
 	{
 
@@ -108,29 +123,31 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 
 	/** Get Base Type.
 		@return Base Type	  */
-	public String getBaseType () 
+	public String getBaseType()
 	{
 		return (String)get_Value(COLUMNNAME_BaseType);
 	}
 
 	public org.compiere.model.I_C_Tax getC_BaseTax() throws RuntimeException
-    {
-		return (org.compiere.model.I_C_Tax)MTable.get(getCtx(), org.compiere.model.I_C_Tax.Table_Name)
-			.getPO(getC_BaseTax_ID(), get_TrxName());	}
+	{
+		return (org.compiere.model.I_C_Tax)MTable.get(getCtx(), org.compiere.model.I_C_Tax.Table_ID)
+			.getPO(getC_BaseTax_ID(), get_TrxName());
+	}
 
 	/** Set Base Tax.
-		@param C_BaseTax_ID Base Tax	  */
+		@param C_BaseTax_ID Base Tax
+	*/
 	public void setC_BaseTax_ID (int C_BaseTax_ID)
 	{
-		if (C_BaseTax_ID < 1) 
+		if (C_BaseTax_ID < 1)
 			set_Value (COLUMNNAME_C_BaseTax_ID, null);
-		else 
+		else
 			set_Value (COLUMNNAME_C_BaseTax_ID, Integer.valueOf(C_BaseTax_ID));
 	}
 
 	/** Get Base Tax.
 		@return Base Tax	  */
-	public int getC_BaseTax_ID () 
+	public int getC_BaseTax_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_C_BaseTax_ID);
 		if (ii == null)
@@ -139,26 +156,26 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	public org.compiere.model.I_C_Tax getC_Tax() throws RuntimeException
-    {
-		return (org.compiere.model.I_C_Tax)MTable.get(getCtx(), org.compiere.model.I_C_Tax.Table_Name)
-			.getPO(getC_Tax_ID(), get_TrxName());	}
+	{
+		return (org.compiere.model.I_C_Tax)MTable.get(getCtx(), org.compiere.model.I_C_Tax.Table_ID)
+			.getPO(getC_Tax_ID(), get_TrxName());
+	}
 
 	/** Set Tax.
-		@param C_Tax_ID 
-		Tax identifier
-	  */
+		@param C_Tax_ID Tax identifier
+	*/
 	public void setC_Tax_ID (int C_Tax_ID)
 	{
-		if (C_Tax_ID < 1) 
+		if (C_Tax_ID < 1)
 			set_Value (COLUMNNAME_C_Tax_ID, null);
-		else 
+		else
 			set_Value (COLUMNNAME_C_Tax_ID, Integer.valueOf(C_Tax_ID));
 	}
 
 	/** Get Tax.
 		@return Tax identifier
 	  */
-	public int getC_Tax_ID () 
+	public int getC_Tax_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_C_Tax_ID);
 		if (ii == null)
@@ -167,9 +184,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	/** Set Description.
-		@param Description 
-		Optional short description of the record
-	  */
+		@param Description Optional short description of the record
+	*/
 	public void setDescription (String Description)
 	{
 		set_Value (COLUMNNAME_Description, Description);
@@ -178,13 +194,36 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	/** Get Description.
 		@return Optional short description of the record
 	  */
-	public String getDescription () 
+	public String getDescription()
 	{
 		return (String)get_Value(COLUMNNAME_Description);
 	}
 
+	/** Set Is Calc On Allocation.
+		@param IsCalcOnAllocation Is Calc On Allocation
+	*/
+	public void setIsCalcOnAllocation (boolean IsCalcOnAllocation)
+	{
+		set_Value (COLUMNNAME_IsCalcOnAllocation, Boolean.valueOf(IsCalcOnAllocation));
+	}
+
+	/** Get Is Calc On Allocation.
+		@return Is Calc On Allocation	  */
+	public boolean isCalcOnAllocation()
+	{
+		Object oo = get_Value(COLUMNNAME_IsCalcOnAllocation);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Is Calc On Invoice.
-		@param IsCalcOnInvoice Is Calc On Invoice	  */
+		@param IsCalcOnInvoice Is Calc On Invoice
+	*/
 	public void setIsCalcOnInvoice (boolean IsCalcOnInvoice)
 	{
 		set_Value (COLUMNNAME_IsCalcOnInvoice, Boolean.valueOf(IsCalcOnInvoice));
@@ -192,7 +231,7 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 
 	/** Get Is Calc On Invoice.
 		@return Is Calc On Invoice	  */
-	public boolean isCalcOnInvoice () 
+	public boolean isCalcOnInvoice()
 	{
 		Object oo = get_Value(COLUMNNAME_IsCalcOnInvoice);
 		if (oo != null) 
@@ -205,7 +244,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	/** Set Is Calc On Payment.
-		@param IsCalcOnPayment Is Calc On Payment	  */
+		@param IsCalcOnPayment Is Calc On Payment
+	*/
 	public void setIsCalcOnPayment (boolean IsCalcOnPayment)
 	{
 		set_Value (COLUMNNAME_IsCalcOnPayment, Boolean.valueOf(IsCalcOnPayment));
@@ -213,7 +253,7 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 
 	/** Get Is Calc On Payment.
 		@return Is Calc On Payment	  */
-	public boolean isCalcOnPayment () 
+	public boolean isCalcOnPayment()
 	{
 		Object oo = get_Value(COLUMNNAME_IsCalcOnPayment);
 		if (oo != null) 
@@ -226,7 +266,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	/** Set Is Modifiable On Payment.
-		@param IsModifiableOnPayment Is Modifiable On Payment	  */
+		@param IsModifiableOnPayment Is Modifiable On Payment
+	*/
 	public void setIsModifiableOnPayment (boolean IsModifiableOnPayment)
 	{
 		set_Value (COLUMNNAME_IsModifiableOnPayment, Boolean.valueOf(IsModifiableOnPayment));
@@ -234,7 +275,7 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 
 	/** Get Is Modifiable On Payment.
 		@return Is Modifiable On Payment	  */
-	public boolean isModifiableOnPayment () 
+	public boolean isModifiableOnPayment()
 	{
 		Object oo = get_Value(COLUMNNAME_IsModifiableOnPayment);
 		if (oo != null) 
@@ -247,18 +288,19 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	/** Set Withholding Calculation.
-		@param LCO_WithholdingCalc_ID Withholding Calculation	  */
+		@param LCO_WithholdingCalc_ID Withholding Calculation
+	*/
 	public void setLCO_WithholdingCalc_ID (int LCO_WithholdingCalc_ID)
 	{
-		if (LCO_WithholdingCalc_ID < 1) 
+		if (LCO_WithholdingCalc_ID < 1)
 			set_ValueNoCheck (COLUMNNAME_LCO_WithholdingCalc_ID, null);
-		else 
+		else
 			set_ValueNoCheck (COLUMNNAME_LCO_WithholdingCalc_ID, Integer.valueOf(LCO_WithholdingCalc_ID));
 	}
 
 	/** Get Withholding Calculation.
 		@return Withholding Calculation	  */
-	public int getLCO_WithholdingCalc_ID () 
+	public int getLCO_WithholdingCalc_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_LCO_WithholdingCalc_ID);
 		if (ii == null)
@@ -267,7 +309,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	/** Set LCO_WithholdingCalc_UU.
-		@param LCO_WithholdingCalc_UU LCO_WithholdingCalc_UU	  */
+		@param LCO_WithholdingCalc_UU LCO_WithholdingCalc_UU
+	*/
 	public void setLCO_WithholdingCalc_UU (String LCO_WithholdingCalc_UU)
 	{
 		set_Value (COLUMNNAME_LCO_WithholdingCalc_UU, LCO_WithholdingCalc_UU);
@@ -275,29 +318,31 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 
 	/** Get LCO_WithholdingCalc_UU.
 		@return LCO_WithholdingCalc_UU	  */
-	public String getLCO_WithholdingCalc_UU () 
+	public String getLCO_WithholdingCalc_UU()
 	{
 		return (String)get_Value(COLUMNNAME_LCO_WithholdingCalc_UU);
 	}
 
 	public org.globalqss.model.I_LCO_WithholdingType getLCO_WithholdingType() throws RuntimeException
-    {
-		return (org.globalqss.model.I_LCO_WithholdingType)MTable.get(getCtx(), org.globalqss.model.I_LCO_WithholdingType.Table_Name)
-			.getPO(getLCO_WithholdingType_ID(), get_TrxName());	}
+	{
+		return (org.globalqss.model.I_LCO_WithholdingType)MTable.get(getCtx(), org.globalqss.model.I_LCO_WithholdingType.Table_ID)
+			.getPO(getLCO_WithholdingType_ID(), get_TrxName());
+	}
 
 	/** Set Withholding Type.
-		@param LCO_WithholdingType_ID Withholding Type	  */
+		@param LCO_WithholdingType_ID Withholding Type
+	*/
 	public void setLCO_WithholdingType_ID (int LCO_WithholdingType_ID)
 	{
-		if (LCO_WithholdingType_ID < 1) 
+		if (LCO_WithholdingType_ID < 1)
 			set_Value (COLUMNNAME_LCO_WithholdingType_ID, null);
-		else 
+		else
 			set_Value (COLUMNNAME_LCO_WithholdingType_ID, Integer.valueOf(LCO_WithholdingType_ID));
 	}
 
 	/** Get Withholding Type.
 		@return Withholding Type	  */
-	public int getLCO_WithholdingType_ID () 
+	public int getLCO_WithholdingType_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_LCO_WithholdingType_ID);
 		if (ii == null)
@@ -306,9 +351,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	/** Set Name.
-		@param Name 
-		Alphanumeric identifier of the entity
-	  */
+		@param Name Alphanumeric identifier of the entity
+	*/
 	public void setName (String Name)
 	{
 		set_Value (COLUMNNAME_Name, Name);
@@ -317,7 +361,7 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	/** Get Name.
 		@return Alphanumeric identifier of the entity
 	  */
-	public String getName () 
+	public String getName()
 	{
 		return (String)get_Value(COLUMNNAME_Name);
 	}
@@ -331,9 +375,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
     }
 
 	/** Set Threshold max.
-		@param ThresholdMax 
-		Maximum gross amount for withholding calculation  (0=no limit)
-	  */
+		@param ThresholdMax Maximum gross amount for withholding calculation  (0=no limit)
+	*/
 	public void setThresholdMax (BigDecimal ThresholdMax)
 	{
 		set_Value (COLUMNNAME_ThresholdMax, ThresholdMax);
@@ -342,7 +385,7 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	/** Get Threshold max.
 		@return Maximum gross amount for withholding calculation  (0=no limit)
 	  */
-	public BigDecimal getThresholdMax () 
+	public BigDecimal getThresholdMax()
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_ThresholdMax);
 		if (bd == null)
@@ -351,9 +394,8 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	}
 
 	/** Set Threshold min.
-		@param Thresholdmin 
-		Minimum gross amount for withholding calculation
-	  */
+		@param Thresholdmin Minimum gross amount for withholding calculation
+	*/
 	public void setThresholdmin (BigDecimal Thresholdmin)
 	{
 		set_Value (COLUMNNAME_Thresholdmin, Thresholdmin);
@@ -362,7 +404,7 @@ public class X_LCO_WithholdingCalc extends PO implements I_LCO_WithholdingCalc, 
 	/** Get Threshold min.
 		@return Minimum gross amount for withholding calculation
 	  */
-	public BigDecimal getThresholdmin () 
+	public BigDecimal getThresholdmin()
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_Thresholdmin);
 		if (bd == null)

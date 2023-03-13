@@ -24,19 +24,31 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Model for LCO_ISIC
  *  @author iDempiere (generated) 
- *  @version Release 3.1 - $Id$ */
+ *  @version Release 10 - $Id$ */
+@org.adempiere.base.Model(table="LCO_ISIC")
 public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent 
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20151110L;
+	private static final long serialVersionUID = 20230306L;
 
     /** Standard Constructor */
     public X_LCO_ISIC (Properties ctx, int LCO_ISIC_ID, String trxName)
     {
       super (ctx, LCO_ISIC_ID, trxName);
+      /** if (LCO_ISIC_ID == 0)
+        {
+			setLCO_ISIC_ID (0);
+			setName (null);
+        } */
+    }
+
+    /** Standard Constructor */
+    public X_LCO_ISIC (Properties ctx, int LCO_ISIC_ID, String trxName, String ... virtualColumns)
+    {
+      super (ctx, LCO_ISIC_ID, trxName, virtualColumns);
       /** if (LCO_ISIC_ID == 0)
         {
 			setLCO_ISIC_ID (0);
@@ -67,15 +79,14 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 
     public String toString()
     {
-      StringBuffer sb = new StringBuffer ("X_LCO_ISIC[")
-        .append(get_ID()).append("]");
+      StringBuilder sb = new StringBuilder ("X_LCO_ISIC[")
+        .append(get_ID()).append(",Name=").append(getName()).append("]");
       return sb.toString();
     }
 
 	/** Set Description.
-		@param Description 
-		Optional short description of the record
-	  */
+		@param Description Optional short description of the record
+	*/
 	public void setDescription (String Description)
 	{
 		set_Value (COLUMNNAME_Description, Description);
@@ -84,15 +95,14 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	/** Get Description.
 		@return Optional short description of the record
 	  */
-	public String getDescription () 
+	public String getDescription()
 	{
 		return (String)get_Value(COLUMNNAME_Description);
 	}
 
 	/** Set Default.
-		@param IsDefault 
-		Default value
-	  */
+		@param IsDefault Default value
+	*/
 	public void setIsDefault (boolean IsDefault)
 	{
 		set_Value (COLUMNNAME_IsDefault, Boolean.valueOf(IsDefault));
@@ -101,7 +111,7 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	/** Get Default.
 		@return Default value
 	  */
-	public boolean isDefault () 
+	public boolean isDefault()
 	{
 		Object oo = get_Value(COLUMNNAME_IsDefault);
 		if (oo != null) 
@@ -114,9 +124,8 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	}
 
 	/** Set Summary Level.
-		@param IsSummary 
-		This is a summary entity
-	  */
+		@param IsSummary This is a summary entity
+	*/
 	public void setIsSummary (boolean IsSummary)
 	{
 		set_Value (COLUMNNAME_IsSummary, Boolean.valueOf(IsSummary));
@@ -125,7 +134,7 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	/** Get Summary Level.
 		@return This is a summary entity
 	  */
-	public boolean isSummary () 
+	public boolean isSummary()
 	{
 		Object oo = get_Value(COLUMNNAME_IsSummary);
 		if (oo != null) 
@@ -138,18 +147,19 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	}
 
 	/** Set ISIC.
-		@param LCO_ISIC_ID ISIC	  */
+		@param LCO_ISIC_ID ISIC
+	*/
 	public void setLCO_ISIC_ID (int LCO_ISIC_ID)
 	{
-		if (LCO_ISIC_ID < 1) 
+		if (LCO_ISIC_ID < 1)
 			set_ValueNoCheck (COLUMNNAME_LCO_ISIC_ID, null);
-		else 
+		else
 			set_ValueNoCheck (COLUMNNAME_LCO_ISIC_ID, Integer.valueOf(LCO_ISIC_ID));
 	}
 
 	/** Get ISIC.
 		@return ISIC	  */
-	public int getLCO_ISIC_ID () 
+	public int getLCO_ISIC_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_LCO_ISIC_ID);
 		if (ii == null)
@@ -158,7 +168,8 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	}
 
 	/** Set LCO_ISIC_UU.
-		@param LCO_ISIC_UU LCO_ISIC_UU	  */
+		@param LCO_ISIC_UU LCO_ISIC_UU
+	*/
 	public void setLCO_ISIC_UU (String LCO_ISIC_UU)
 	{
 		set_Value (COLUMNNAME_LCO_ISIC_UU, LCO_ISIC_UU);
@@ -166,15 +177,14 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 
 	/** Get LCO_ISIC_UU.
 		@return LCO_ISIC_UU	  */
-	public String getLCO_ISIC_UU () 
+	public String getLCO_ISIC_UU()
 	{
 		return (String)get_Value(COLUMNNAME_LCO_ISIC_UU);
 	}
 
 	/** Set Name.
-		@param Name 
-		Alphanumeric identifier of the entity
-	  */
+		@param Name Alphanumeric identifier of the entity
+	*/
 	public void setName (String Name)
 	{
 		set_Value (COLUMNNAME_Name, Name);
@@ -183,7 +193,7 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	/** Get Name.
 		@return Alphanumeric identifier of the entity
 	  */
-	public String getName () 
+	public String getName()
 	{
 		return (String)get_Value(COLUMNNAME_Name);
 	}
@@ -197,9 +207,8 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
     }
 
 	/** Set Search Key.
-		@param Value 
-		Search key for the record in the format required - must be unique
-	  */
+		@param Value Search key for the record in the format required - must be unique
+	*/
 	public void setValue (String Value)
 	{
 		set_Value (COLUMNNAME_Value, Value);
@@ -208,7 +217,7 @@ public class X_LCO_ISIC extends PO implements I_LCO_ISIC, I_Persistent
 	/** Get Search Key.
 		@return Search key for the record in the format required - must be unique
 	  */
-	public String getValue () 
+	public String getValue()
 	{
 		return (String)get_Value(COLUMNNAME_Value);
 	}

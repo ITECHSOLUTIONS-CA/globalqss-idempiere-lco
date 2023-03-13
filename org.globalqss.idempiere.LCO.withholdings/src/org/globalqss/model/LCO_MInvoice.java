@@ -26,6 +26,8 @@
 package org.globalqss.model;
 
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -33,8 +35,12 @@ import java.util.Properties;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MDocType;
+import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
+import org.compiere.model.MInvoiceBatch;
+import org.compiere.model.MInvoiceBatchLine;
 import org.compiere.model.MLocation;
+import org.compiere.model.MOrder;
 import org.compiere.model.MOrgInfo;
 import org.compiere.model.MPriceList;
 import org.compiere.model.MSysConfig;
@@ -54,30 +60,62 @@ public class LCO_MInvoice extends MInvoice
 	 *
 	 */
 	private static final long serialVersionUID = -924606040343895114L;
-
+	
 	public LCO_MInvoice(Properties ctx, int C_Invoice_ID, String trxName) {
 		super(ctx, C_Invoice_ID, trxName);
 	}
-
+	
+	public LCO_MInvoice(MInOut ship, Timestamp invoiceDate) {
+		super(ship, invoiceDate);
+	}
+	
+	public LCO_MInvoice(MInvoice copy) {
+		super(copy);
+	}
+	
+	public LCO_MInvoice(MInvoiceBatch batch, MInvoiceBatchLine line) {
+		super(batch, line);
+	}
+	
+	public LCO_MInvoice(MOrder order, int C_DocTypeTarget_ID, Timestamp invoiceDate) {
+		super(order, C_DocTypeTarget_ID, invoiceDate);
+	}
+	
+	public LCO_MInvoice(Properties ctx, int C_Invoice_ID, String trxName, String... virtualColumns) {
+		super(ctx, C_Invoice_ID, trxName, virtualColumns);
+	}
+	
+	public LCO_MInvoice(Properties ctx, MInvoice copy, String trxName) {
+		super(ctx, copy, trxName);
+	}
+	
+	public LCO_MInvoice(Properties ctx, MInvoice copy) {
+		super(ctx, copy);
+	}
+	
+	public LCO_MInvoice(Properties ctx, ResultSet rs, String trxName) {
+		super(ctx, rs, trxName);
+	}
+	
 	public int recalcWithholdings() {
 		if (! MSysConfig.getBooleanValue("LCO_USE_WITHHOLDINGS", true, Env.getAD_Client_ID(Env.getCtx())))
 			return 0;
-
+		
 		MDocType dt = new MDocType(getCtx(), getC_DocTypeTarget_ID(), get_TrxName());
 		String genwh = dt.get_ValueAsString("GenerateWithholding");
 		if (genwh == null || genwh.equals("N"))
 			return 0;
-
+		
 		int noins = 0;
 		log.info("");
 		BigDecimal totwith = new BigDecimal("0");
-
+		
 		int nodel = DB.executeUpdateEx(
 				"DELETE FROM LCO_InvoiceWithholding WHERE C_Invoice_ID = ?",
 				new Object[] { getC_Invoice_ID() },
 				get_TrxName());
 		log.config("LCO_InvoiceWithholding deleted="+nodel);
-
+		
 		// Fill variables normally needed
 		// BP variables
 		MBPartner bp = new MBPartner(getCtx(), getC_BPartner_ID(), get_TrxName());
@@ -92,7 +130,7 @@ public class LCO_MInvoice extends MInvoice
 		int org_taxpayertype_id = oi.get_ValueAsInt("LCO_TaxPayerType_ID");
 		MLocation ol = MLocation.get(getCtx(), oi.getC_Location_ID(), get_TrxName());
 		int org_city_id = ol.getC_City_ID();
-
+		
 		// Search withholding types applicable depending on IsSOTrx
 		List<X_LCO_WithholdingType> wts = new Query(getCtx(), X_LCO_WithholdingType.Table_Name, "IsSOTrx=?", get_TrxName())
 			.setOnlyActiveRecords(true)
@@ -103,7 +141,7 @@ public class LCO_MInvoice extends MInvoice
 		{
 			// For each applicable withholding
 			log.info("Withholding Type: "+wt.getLCO_WithholdingType_ID()+"/"+wt.getName());
-
+			
 			X_LCO_WithholdingRuleConf wrc = new Query(getCtx(),
 					X_LCO_WithholdingRuleConf.Table_Name,
 					"LCO_WithholdingType_ID=?",
@@ -115,7 +153,7 @@ public class LCO_MInvoice extends MInvoice
 				log.warning("No LCO_WithholdingRuleConf for LCO_WithholdingType = "+wt.getLCO_WithholdingType_ID());
 				continue;
 			}
-
+			
 			// look for applicable rules according to config fields (rule)
 			StringBuffer wherer = new StringBuffer(" LCO_WithholdingType_ID=? AND ValidFrom<=? ");
 			List<Object> paramsr = new ArrayList<Object>();
@@ -149,7 +187,7 @@ public class LCO_MInvoice extends MInvoice
 				if (org_city_id <= 0)
 					log.warning("Possible configuration error org city is used but not set");
 			}
-
+			
 			// Add withholding categories of lines
 			if (wrc.isUseWithholdingCategory()) {
 				// look the conf fields
@@ -176,7 +214,7 @@ public class LCO_MInvoice extends MInvoice
 				if (addedlines)
 					wherer.append(") ");
 			}
-
+			
 			// Add tax categories of lines
 			if (wrc.isUseProductTaxCategory()) {
 				// look the conf fields
@@ -203,7 +241,7 @@ public class LCO_MInvoice extends MInvoice
 				if (addedlines)
 					wherer.append(") ");
 			}
-
+			
 			List<X_LCO_WithholdingRule> wrs = new Query(getCtx(), X_LCO_WithholdingRule.Table_Name, wherer.toString(), get_TrxName())
 				.setOnlyActiveRecords(true)
 				.setParameters(paramsr)
@@ -217,20 +255,20 @@ public class LCO_MInvoice extends MInvoice
 					log.severe("Rule without calc " + wr.getLCO_WithholdingRule_ID());
 					continue;
 				}
-
+				
 				// bring record for tax
 				MTax tax = new MTax(getCtx(), wc.getC_Tax_ID(), get_TrxName());
-
+				
 				log.info("WithholdingRule: "+wr.getLCO_WithholdingRule_ID()+"/"+wr.getName()
 						+" BaseType:"+wc.getBaseType()
 						+" Calc: "+wc.getLCO_WithholdingCalc_ID()+"/"+wc.getName()
 						+" CalcOnInvoice:"+wc.isCalcOnInvoice()
 						+" Tax: "+tax.getC_Tax_ID()+"/"+tax.getName());
-
+				
 				// calc base
 				// apply rule to calc base
 				BigDecimal base = null;
-
+				
 				if (wc.getBaseType() == null) {
 					log.severe("Base Type null in calc record "+wr.getLCO_WithholdingCalc_ID());
 				} else if (wc.getBaseType().equals(X_LCO_WithholdingCalc.BASETYPE_Document)) {
@@ -327,7 +365,7 @@ public class LCO_MInvoice extends MInvoice
 					}
 				}
 				log.info("Base: "+base+ " Thresholdmin:"+wc.getThresholdmin());
-
+				
 				// if base between thresholdmin and thresholdmax inclusive
 				// if thresholdmax = 0 it is ignored
 				if (base != null &&
@@ -336,7 +374,7 @@ public class LCO_MInvoice extends MInvoice
 						(wc.getThresholdMax() == null || wc.getThresholdMax().compareTo(Env.ZERO) == 0 || base.compareTo(wc.getThresholdMax()) <= 0) &&
 						tax.getRate() != null &&
 						tax.getRate().compareTo(Env.ZERO) != 0) {
-
+					
 					// insert new withholding record
 					// with: type, tax, base amt, percent, tax amt, trx date, acct date, rule
 					MLCOInvoiceWithholding iwh = new MLCOInvoiceWithholding(getCtx(), 0, get_TrxName());
@@ -369,11 +407,10 @@ public class LCO_MInvoice extends MInvoice
 					log.info("LCO_InvoiceWithholding saved:"+iwh.getTaxAmt());
 				}
 			} // while each applicable rule
-
 		} // while type
 		LCO_MInvoice.updateHeaderWithholding(getC_Invoice_ID(), get_TrxName());
 		saveEx();
-
+		
 		return noins;
 	}
 

@@ -23,7 +23,7 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Interface for LCO_WithholdingType
  *  @author iDempiere (generated) 
- *  @version Release 3.1
+ *  @version Release 10
  */
 @SuppressWarnings("all")
 public interface I_LCO_WithholdingType 
@@ -32,7 +32,7 @@ public interface I_LCO_WithholdingType
     /** TableName=LCO_WithholdingType */
     public static final String Table_Name = "LCO_WithholdingType";
 
-    /** AD_Table_ID=1000003 */
+    /** AD_Table_ID=1000009 */
     public static final int Table_ID = MTable.getTable_ID(Table_Name);
 
     KeyNamePair Model = new KeyNamePair(Table_ID, Table_Name);
@@ -46,8 +46,8 @@ public interface I_LCO_WithholdingType
     /** Column name AD_Client_ID */
     public static final String COLUMNNAME_AD_Client_ID = "AD_Client_ID";
 
-	/** Get Client.
-	  * Client/Tenant for this installation.
+	/** Get Tenant.
+	  * Tenant for this installation.
 	  */
 	public int getAD_Client_ID();
 
@@ -55,14 +55,70 @@ public interface I_LCO_WithholdingType
     public static final String COLUMNNAME_AD_Org_ID = "AD_Org_ID";
 
 	/** Set Organization.
-	  * Organizational entity within client
+	  * Organizational entity within tenant
 	  */
 	public void setAD_Org_ID (int AD_Org_ID);
 
 	/** Get Organization.
-	  * Organizational entity within client
+	  * Organizational entity within tenant
 	  */
 	public int getAD_Org_ID();
+
+    /** Column name C_BPartner_ID */
+    public static final String COLUMNNAME_C_BPartner_ID = "C_BPartner_ID";
+
+	/** Set Business Partner.
+	  * Identifies a Business Partner
+	  */
+	public void setC_BPartner_ID (int C_BPartner_ID);
+
+	/** Get Business Partner.
+	  * Identifies a Business Partner
+	  */
+	public int getC_BPartner_ID();
+
+	public org.compiere.model.I_C_BPartner getC_BPartner() throws RuntimeException;
+
+    /** Column name C_Charge_ID */
+    public static final String COLUMNNAME_C_Charge_ID = "C_Charge_ID";
+
+	/** Set Charge.
+	  * Additional document charges
+	  */
+	public void setC_Charge_ID (int C_Charge_ID);
+
+	/** Get Charge.
+	  * Additional document charges
+	  */
+	public int getC_Charge_ID();
+
+	public org.compiere.model.I_C_Charge getC_Charge() throws RuntimeException;
+
+    /** Column name C_Currency_ID */
+    public static final String COLUMNNAME_C_Currency_ID = "C_Currency_ID";
+
+	/** Set Currency.
+	  * The Currency for this record
+	  */
+	public void setC_Currency_ID (int C_Currency_ID);
+
+	/** Get Currency.
+	  * The Currency for this record
+	  */
+	public int getC_Currency_ID();
+
+	public org.compiere.model.I_C_Currency getC_Currency() throws RuntimeException;
+
+    /** Column name C_DocTypeDeclare_ID */
+    public static final String COLUMNNAME_C_DocTypeDeclare_ID = "C_DocTypeDeclare_ID";
+
+	/** Set Document Type Declare	  */
+	public void setC_DocTypeDeclare_ID (int C_DocTypeDeclare_ID);
+
+	/** Get Document Type Declare	  */
+	public int getC_DocTypeDeclare_ID();
+
+	public org.compiere.model.I_C_DocType getC_DocTypeDeclare() throws RuntimeException;
 
     /** Column name Counter */
     public static final String COLUMNNAME_Counter = "Counter";
@@ -178,4 +234,13 @@ public interface I_LCO_WithholdingType
 	  * User who updated this records
 	  */
 	public int getUpdatedBy();
+
+    /** Column name WithholdingType */
+    public static final String COLUMNNAME_WithholdingType = "WithholdingType";
+
+	/** Set Withholding Type	  */
+	public void setWithholdingType (String WithholdingType);
+
+	/** Get Withholding Type	  */
+	public String getWithholdingType();
 }

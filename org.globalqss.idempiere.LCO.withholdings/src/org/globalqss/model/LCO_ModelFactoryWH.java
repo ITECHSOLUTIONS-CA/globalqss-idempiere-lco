@@ -25,75 +25,11 @@
 
 package org.globalqss.model;
 
-import java.sql.ResultSet;
+import org.adempiere.base.AnnotationBasedModelFactory;
 
-import org.adempiere.base.IModelFactory;
-import org.compiere.model.PO;
-import org.compiere.util.Env;
-
-public class LCO_ModelFactoryWH implements IModelFactory {
-
+public class LCO_ModelFactoryWH extends AnnotationBasedModelFactory {
 	@Override
-	public Class<?> getClass(String tableName) {
-		if (MLCOInvoiceWithholding.Table_Name.equals(tableName))
-			return MLCOInvoiceWithholding.class;
-		if (X_LCO_ISIC.Table_Name.equals(tableName))
-			return X_LCO_ISIC.class;
-		if (X_LCO_TaxPayerType.Table_Name.equals(tableName))
-			return X_LCO_TaxPayerType.class;
-		if (X_LCO_WithholdingCalc.Table_Name.equals(tableName))
-			return X_LCO_WithholdingCalc.class;
-		if (X_LCO_WithholdingCategory.Table_Name.equals(tableName))
-			return X_LCO_WithholdingCategory.class;
-		if (X_LCO_WithholdingRuleConf.Table_Name.equals(tableName))
-			return X_LCO_WithholdingRuleConf.class;
-		if (X_LCO_WithholdingRule.Table_Name.equals(tableName))
-			return X_LCO_WithholdingRule.class;
-		if (X_LCO_WithholdingType.Table_Name.equals(tableName))
-			return X_LCO_WithholdingType.class;
-		return null;
+	protected String[] getPackages() {
+		return new String[] {"org.globalqss.model", "dev.itechsolutions.model"};
 	}
-
-	@Override
-	public PO getPO(String tableName, int Record_ID, String trxName) {
-		if (MLCOInvoiceWithholding.Table_Name.equals(tableName))
-			return new MLCOInvoiceWithholding(Env.getCtx(), Record_ID, trxName);
-		if (X_LCO_ISIC.Table_Name.equals(tableName))
-			return new X_LCO_ISIC(Env.getCtx(), Record_ID, trxName);
-		if (X_LCO_TaxPayerType.Table_Name.equals(tableName))
-			return new X_LCO_TaxPayerType(Env.getCtx(), Record_ID, trxName);
-		if (X_LCO_WithholdingCalc.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingCalc(Env.getCtx(), Record_ID, trxName);
-		if (X_LCO_WithholdingCategory.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingCategory(Env.getCtx(), Record_ID, trxName);
-		if (X_LCO_WithholdingRuleConf.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingRuleConf(Env.getCtx(), Record_ID, trxName);
-		if (X_LCO_WithholdingRule.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingRule(Env.getCtx(), Record_ID, trxName);
-		if (X_LCO_WithholdingType.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingType(Env.getCtx(), Record_ID, trxName);
-		return null;
-	}
-
-	@Override
-	public PO getPO(String tableName, ResultSet rs, String trxName) {
-		if (MLCOInvoiceWithholding.Table_Name.equals(tableName))
-			return new MLCOInvoiceWithholding(Env.getCtx(), rs, trxName);
-		if (X_LCO_ISIC.Table_Name.equals(tableName))
-			return new X_LCO_ISIC(Env.getCtx(), rs, trxName);
-		if (X_LCO_TaxPayerType.Table_Name.equals(tableName))
-			return new X_LCO_TaxPayerType(Env.getCtx(), rs, trxName);
-		if (X_LCO_WithholdingCalc.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingCalc(Env.getCtx(), rs, trxName);
-		if (X_LCO_WithholdingCategory.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingCategory(Env.getCtx(), rs, trxName);
-		if (X_LCO_WithholdingRuleConf.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingRuleConf(Env.getCtx(), rs, trxName);
-		if (X_LCO_WithholdingRule.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingRule(Env.getCtx(), rs, trxName);
-		if (X_LCO_WithholdingType.Table_Name.equals(tableName))
-			return new X_LCO_WithholdingType(Env.getCtx(), rs, trxName);
-		return null;
-	}
-
 }

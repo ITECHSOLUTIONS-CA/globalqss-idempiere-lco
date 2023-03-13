@@ -31,12 +31,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import org.adempiere.base.event.AbstractEventHandler;
 import org.adempiere.base.event.FactsEventData;
 import org.adempiere.base.event.IEventManager;
 import org.adempiere.base.event.IEventTopics;
 import org.adempiere.base.event.LoginEventData;
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.acct.Doc;
 import org.compiere.acct.DocLine_Allocation;
 import org.compiere.acct.DocTax;
@@ -50,8 +52,6 @@ import org.compiere.model.MDocType;
 import org.compiere.model.MFactAcct;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MInvoiceLine;
-import org.compiere.model.MInvoicePaySchedule;
-import org.compiere.model.MInvoiceTax;
 import org.compiere.model.MPayment;
 import org.compiere.model.MPaymentAllocate;
 import org.compiere.model.MSysConfig;
@@ -61,7 +61,13 @@ import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
+import org.compiere.util.Util;
 import org.osgi.service.event.Event;
+
+import dev.itechsolutions.model.ITSMInvoice;
+import dev.itechsolutions.model.MITSPurchaseSalesBook;
+import dev.itechsolutions.util.ColumnUtils;
+import dev.itechsolutions.util.POUtil;
 
 /**
  *	Validator or Localization Colombia (Withholdings)
@@ -153,14 +159,23 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			if (msg != null)
 				throw new RuntimeException(msg);
 		}
-
+		
 		if (po instanceof X_LCO_WithholdingCalc
 				&& (type.equals(IEventTopics.PO_BEFORE_CHANGE) || type.equals(IEventTopics.PO_BEFORE_NEW))) {
 			X_LCO_WithholdingCalc lwc = (X_LCO_WithholdingCalc) po;
-			if (lwc.isCalcOnInvoice() && lwc.isCalcOnPayment())
+			/*if (lwc.isCalcOnInvoice() && lwc.isCalcOnPayment())
+				lwc.setIsCalcOnPayment(false);*/
+			if (lwc.isCalcOnInvoice())
+			{
 				lwc.setIsCalcOnPayment(false);
+				lwc.setIsCalcOnAllocation(false);
+			}
+			else if (lwc.isCalcOnAllocation())
+				lwc.setIsCalcOnPayment(false);
+			else if (!lwc.isCalcOnPayment())
+				lwc.setIsCalcOnAllocation(true);
 		}
-
+		
 		// Document Events
 		// before preparing a reversal invoice add the invoice withholding taxes
 		if (po instanceof MInvoice
@@ -206,7 +221,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				}
 			}
 		}
-
+		
 		// before preparing invoice validate if withholdings has been generated
 		if (po instanceof MInvoice
 				&& type.equals(IEventTopics.DOC_BEFORE_PREPARE)) {
@@ -218,36 +233,58 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					MDocType dt = new MDocType(inv.getCtx(), inv.getC_DocTypeTarget_ID(), inv.get_TrxName());
 					String genwh = dt.get_ValueAsString("GenerateWithholding");
 					if (genwh != null) {
-
-						if (genwh.equals("Y")) {
+						/*if (genwh.equals("Y")) {
 							// document type configured to compel generation of withholdings
 							throw new RuntimeException(Msg.getMsg(inv.getCtx(), "LCO_WithholdingNotGenerated"));
-						}
-
+						}*/
+						
 						if (genwh.equals("A")) {
 							// document type configured to generate withholdings automatically
-							LCO_MInvoice lcoinv = new LCO_MInvoice(inv.getCtx(), inv.getC_Invoice_ID(), inv.get_TrxName());
-							lcoinv.recalcWithholdings();
+							ITSMInvoice.recalcWithholdings(inv);
 						}
 					}
 				}
 			}
 		}
-
+		
 		// after preparing invoice move invoice withholdings to taxes and recalc grandtotal of invoice
 		if (po instanceof MInvoice && type.equals(IEventTopics.DOC_BEFORE_COMPLETE)) {
-			msg = translateWithholdingToTaxes((MInvoice) po);
+			MInvoice invoice = (MInvoice) po;
+			msg = translateWithholdingToTaxes(invoice);
 			if (msg != null)
 				throw new RuntimeException(msg);
+			
+			if(MSysConfig.getBooleanValue("VALIDATE_IF_EXISTS_BOOK", false, po.getAD_Client_ID()))
+				validateIfExistsBook(invoice);
 		}
+		
+		//Before Reverse - Add By José Castañeda
+		if(po instanceof MInvoice
+				&& type.equals(IEventTopics.DOC_BEFORE_REVERSEACCRUAL))
+		{
+			MInvoice invoice = (MInvoice) po;
 
+			if(MSysConfig.getBooleanValue("VALIDATE_IF_EXISTS_BOOK", false, po.getAD_Client_ID()))
+				validateIfExistsBook(invoice);			
+		}
+		
+		if(po instanceof MInvoice
+				&& type.equals(IEventTopics.DOC_BEFORE_REVERSECORRECT))
+		{
+			MInvoice invoice = (MInvoice) po;
+			
+			if(MSysConfig.getBooleanValue("VALIDATE_IF_EXISTS_BOOK", false, po.getAD_Client_ID()))
+				validateIfExistsBook(invoice);			
+		}
+		//	End Add
+		
 		// after completing the invoice fix the dates on withholdings and mark the invoice withholdings as processed
 		if (po instanceof MInvoice && type.equals(IEventTopics.DOC_AFTER_COMPLETE)) {
 			msg = completeInvoiceWithholding((MInvoice) po);
 			if (msg != null)
 				throw new RuntimeException(msg);
 		}
-
+		
 		// before completing the payment - validate that writeoff amount must be greater than sum of payment withholdings
 		if (po instanceof MPayment && type.equals(IEventTopics.DOC_BEFORE_COMPLETE)) {
 			msg = validateWriteOffVsPaymentWithholdings((MPayment) po);
@@ -352,6 +389,16 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		}
 
 		return null;
+	}
+	
+	public void validateIfExistsBook(MInvoice invoice) {
+		//		Get Book Info
+		int result = MITSPurchaseSalesBook.lookForBooksWithDate(invoice.getAD_Org_ID(), (invoice.isSOTrx() ? "V" : "C")
+				, invoice.getDateAcct(), invoice.getDateAcct()
+				, true, 0, invoice.get_TrxName());
+		
+		if(result>0)
+			throw new AdempiereException("@InvoiceWithBook@");
 	}
 
 	private boolean thereAreCalc(MInvoice inv) throws SQLException {
@@ -591,7 +638,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 					  "SELECT i.C_Tax_ID, NVL(SUM(i.TaxBaseAmt),0) AS TaxBaseAmt, NVL(SUM(i.TaxAmt),0) AS TaxAmt, t.Name, t.Rate, t.IsSalesTax "
 					 + " FROM LCO_InvoiceWithholding i, C_Tax t "
 					+ " WHERE i.C_Invoice_ID = ? AND " +
-							 "i.IsCalcOnPayment = 'Y' AND " +
+							 "(i.IsCalcOnPayment = 'Y' OR i.IsCalcOnAllocation = 'Y') AND " +
 							 "i.IsActive = 'Y' AND " +
 							 "i.Processed = 'Y' AND " +
 							 "i.C_AllocationLine_ID = ? AND " +
@@ -730,7 +777,6 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 	}
 
 	private String translateWithholdingToTaxes(MInvoice inv) {
-		BigDecimal sumit = new BigDecimal(0);
 
 		MDocType dt = new MDocType(inv.getCtx(), inv.getC_DocTypeTarget_ID(), inv.get_TrxName());
 		String genwh = dt.get_ValueAsString("GenerateWithholding");
@@ -758,70 +804,50 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 			inv.set_CustomColumn("WithholdingAmt", Env.ZERO);
 
 		} else {
-			// translate withholding to taxes
-			String sql =
-				  "SELECT C_Tax_ID, NVL(SUM(TaxBaseAmt),0) AS TaxBaseAmt, NVL(SUM(TaxAmt),0) AS TaxAmt "
-				 + " FROM LCO_InvoiceWithholding "
-				+ " WHERE C_Invoice_ID = ? AND IsCalcOnPayment = 'N' AND IsActive = 'Y' "
-				+ "GROUP BY C_Tax_ID";
-			PreparedStatement pstmt = null;
-			ResultSet rs = null;
-			try
-			{
-				pstmt = DB.prepareStatement(sql, inv.get_TrxName());
-				pstmt.setInt(1, inv.getC_Invoice_ID());
-				rs = pstmt.executeQuery();
-				while (rs.next()) {
-					MInvoiceTax it = new MInvoiceTax(inv.getCtx(), 0, inv.get_TrxName());
-					it.setAD_Org_ID(inv.getAD_Org_ID());
-					it.setC_Invoice_ID(inv.getC_Invoice_ID());
-					it.setC_Tax_ID(rs.getInt(1));
-					it.setTaxBaseAmt(rs.getBigDecimal(2));
-					it.setTaxAmt(rs.getBigDecimal(3).negate());
-					sumit = sumit.add(rs.getBigDecimal(3));
-					if (!it.save())
-						return "Error creating C_InvoiceTax from LCO_InvoiceWithholding - save InvoiceTax";
-				}
-				BigDecimal actualamt = (BigDecimal) inv.get_Value("WithholdingAmt");
-				if (actualamt == null)
-					actualamt = new BigDecimal(0);
-				if (actualamt.compareTo(sumit) != 0 || sumit.signum() != 0) {
-					inv.set_CustomColumn("WithholdingAmt", sumit);
-					// Subtract to invoice grand total the value of withholdings
-					BigDecimal gt = inv.getGrandTotal();
-					inv.setGrandTotal(gt.subtract(sumit));
-					inv.saveEx();  // need to save here in order to let apply get the right total
-				}
-
-				if (sumit.signum() != 0) {
-					// GrandTotal changed!  If there are payment schedule records they need to be recalculated
-					// subtract withholdings from the first installment
-					BigDecimal toSubtract = sumit;
-					for (MInvoicePaySchedule ips : MInvoicePaySchedule.getInvoicePaySchedule(inv.getCtx(), inv.getC_Invoice_ID(), 0, inv.get_TrxName())) {
-						if (ips.getDueAmt().compareTo(toSubtract) >= 0) {
-							ips.setDueAmt(ips.getDueAmt().subtract(toSubtract));
-							toSubtract = Env.ZERO;
-						} else {
-							toSubtract = toSubtract.subtract(ips.getDueAmt());
-							ips.setDueAmt(Env.ZERO);
-						}
-						if (!ips.save()) {
-							return "Error saving Invoice Pay Schedule subtracting withholdings";
-						}
-						if (toSubtract.signum() <= 0)
-							break;
-					}
-				}
-			} catch (Exception e) {
-				log.log(Level.SEVERE, sql, e);
-				return "Error creating C_InvoiceTax from LCO_InvoiceWithholding - select InvoiceTax";
-			} finally {
-				DB.close(rs, pstmt);
-				rs = null; pstmt = null;
-			}
+			String error = processInvoiceWithholdingTax(inv);
+			if (!Util.isEmpty(error, true))
+				return error;
+			
+			error = processAllocationInvoice(inv);
+			
+			if (!Util.isEmpty(error, true))
+				return error;
 		}
-
+		
 		return null;
+	}
+	
+	private String processAllocationInvoice(MInvoice inv) {
+		
+		if (inv.isReversal())
+			return null;
+		
+		// translate withholding to taxes
+		List<MLCOInvoiceWithholding> withholdings = POUtil.getAttribute(inv
+				, ColumnUtils.ATTRIBUTE_LCO_InvoiceWithholdings
+				, () -> MLCOInvoiceWithholding.getFromInvoice(inv.getCtx(), inv.get_ID(), inv.get_TrxName()));
+		
+		withholdings = withholdings.stream()
+				.filter(withholding -> withholding.isActive() && withholding.isCalcOnAllocation())
+				.collect(Collectors.toList());
+		
+		return MLCOInvoiceWithholding.allocateLines(withholdings.toArray(MLCOInvoiceWithholding[]::new)
+				, null, inv);
+	}
+	
+	private String processInvoiceWithholdingTax(MInvoice inv) {
+		// translate withholding to taxes
+		List<MLCOInvoiceWithholding> withholdings = POUtil.getAttribute(inv
+				, ColumnUtils.ATTRIBUTE_LCO_InvoiceWithholdings
+				, () -> MLCOInvoiceWithholding.getFromInvoice(inv.getCtx(), inv.get_ID(), inv.get_TrxName()));
+		
+		withholdings = withholdings.stream()
+				.filter(withholding -> withholding.isActive() && withholding.isCalcOnInvoice())
+				.sorted(MLCOInvoiceWithholding::sortByTaxId)
+				.collect(Collectors.toList());
+		
+		return MLCOInvoiceWithholding.translateToInvoiceTax(null
+				, withholdings.toArray(MLCOInvoiceWithholding[]::new));
 	}
 
 }	//	LCO_ValidatorWH

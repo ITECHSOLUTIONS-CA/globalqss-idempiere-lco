@@ -33,8 +33,8 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.base.AnnotationBasedColumnCalloutFactory;
 import org.adempiere.base.IColumnCallout;
-import org.adempiere.base.IColumnCalloutFactory;
 import org.compiere.model.GridField;
 import org.compiere.model.GridTab;
 import org.compiere.model.I_C_PaySelectionLine;
@@ -53,7 +53,7 @@ import org.compiere.util.Env;
  *
  *  @author Carlos Ruiz - globalqss - Quality Systems & Solutions - http://globalqss.com
  */
-public class LCO_CalloutWithholding implements IColumnCalloutFactory
+public class LCO_CalloutWithholding extends AnnotationBasedColumnCalloutFactory
 {
 	/**	Logger			*/
 	private static CLogger log = CLogger.getCLogger(LCO_CalloutWithholding.class);
@@ -89,7 +89,7 @@ public class LCO_CalloutWithholding implements IColumnCalloutFactory
 
 		}
 
-		return null;
+		return super.getColumnCallouts(tableName, columnName);
 	}
 
   private static class FillIsUse implements IColumnCallout {
@@ -255,7 +255,10 @@ public class LCO_CalloutWithholding implements IColumnCalloutFactory
 				if (MInvoice.get(ctx, inv_id).isCreditMemo())
 					sumtaxamt = sumtaxamt.negate();
 			}
-
+			
+			if (BigDecimal.ZERO.compareTo(sumtaxamt) == 0)
+				return "";
+			
 			BigDecimal newPayAmt = prevPayAmt.add(prevWriteOff).subtract(sumtaxamt);
 			if (newPayAmt.compareTo(prevPayAmt) != 0)
 				mTab.setValue(payAmtColumn, newPayAmt);
@@ -263,7 +266,11 @@ public class LCO_CalloutWithholding implements IColumnCalloutFactory
 				mTab.setValue("WriteOffAmt", sumtaxamt);
 			return "";
 		}
-
+	}
+	
+	@Override
+	protected String[] getPackages() {
+		return new String[] {"dev.itechsolutions.model", "dev.itechsolutions.callout"};
 	}
 
 }	//	LCO_CalloutWithholding

@@ -28,6 +28,7 @@ package org.globalqss.process;
 
 import java.util.logging.Level;
 
+import org.adempiere.base.annotation.Process;
 import org.compiere.model.MSysConfig;
 import org.compiere.process.ProcessInfoParameter;
 import org.compiere.process.SvrProcess;
@@ -40,6 +41,7 @@ import org.globalqss.model.LCO_MInvoice;
  *
  *  @author Carlos Ruiz - globalqss - Quality Systems & Solutions - http://globalqss.com
  */
+@Process
 public class LCO_GenerateWithholding extends SvrProcess
 {
 

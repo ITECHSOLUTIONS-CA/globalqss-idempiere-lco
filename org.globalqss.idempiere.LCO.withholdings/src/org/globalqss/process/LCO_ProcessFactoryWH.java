@@ -25,25 +25,12 @@
 
 package org.globalqss.process;
 
-import org.adempiere.base.IProcessFactory;
-import org.compiere.process.ProcessCall;
+import org.adempiere.base.AnnotationBasedProcessFactory;
 
-public class LCO_ProcessFactoryWH implements IProcessFactory {
-
+public class LCO_ProcessFactoryWH extends AnnotationBasedProcessFactory {
 	@Override
-	public ProcessCall newProcessInstance(String className) {
-		ProcessCall process = null;
-		if ("org.globalqss.process.LCO_GenerateWithholding".equals(className)) {
-			try {
-				process =  LCO_GenerateWithholding.class.getConstructor().newInstance();
-			} catch (Exception e) {}
-		} else if ("org.globalqss.process.LCO_CreateWithholdingReversal".equals(className)) {
-			try {
-				process =  LCO_CreateWithholdingReversal.class.getConstructor().newInstance();
-			} catch (Exception e) {}
-		}
-
-		return process;
+	protected String[] getPackages() {
+		return new String[] {"org.globalqss.process"
+				, "dev.itechsolutions.process"};
 	}
-
 }

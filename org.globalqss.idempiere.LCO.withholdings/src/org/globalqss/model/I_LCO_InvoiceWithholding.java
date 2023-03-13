@@ -23,7 +23,7 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Interface for LCO_InvoiceWithholding
  *  @author iDempiere (generated) 
- *  @version Release 3.1
+ *  @version Release 10
  */
 @SuppressWarnings("all")
 public interface I_LCO_InvoiceWithholding 
@@ -32,7 +32,7 @@ public interface I_LCO_InvoiceWithholding
     /** TableName=LCO_InvoiceWithholding */
     public static final String Table_Name = "LCO_InvoiceWithholding";
 
-    /** AD_Table_ID=1000007 */
+    /** AD_Table_ID=1000008 */
     public static final int Table_ID = MTable.getTable_ID(Table_Name);
 
     KeyNamePair Model = new KeyNamePair(Table_ID, Table_Name);
@@ -46,8 +46,8 @@ public interface I_LCO_InvoiceWithholding
     /** Column name AD_Client_ID */
     public static final String COLUMNNAME_AD_Client_ID = "AD_Client_ID";
 
-	/** Get Client.
-	  * Client/Tenant for this installation.
+	/** Get Tenant.
+	  * Tenant for this installation.
 	  */
 	public int getAD_Client_ID();
 
@@ -55,14 +55,23 @@ public interface I_LCO_InvoiceWithholding
     public static final String COLUMNNAME_AD_Org_ID = "AD_Org_ID";
 
 	/** Set Organization.
-	  * Organizational entity within client
+	  * Organizational entity within tenant
 	  */
 	public void setAD_Org_ID (int AD_Org_ID);
 
 	/** Get Organization.
-	  * Organizational entity within client
+	  * Organizational entity within tenant
 	  */
 	public int getAD_Org_ID();
+
+    /** Column name AmountRefunded */
+    public static final String COLUMNNAME_AmountRefunded = "AmountRefunded";
+
+	/** Set Amount Refunded	  */
+	public void setAmountRefunded (BigDecimal AmountRefunded);
+
+	/** Get Amount Refunded	  */
+	public BigDecimal getAmountRefunded();
 
     /** Column name C_AllocationLine_ID */
     public static final String COLUMNNAME_C_AllocationLine_ID = "C_AllocationLine_ID";
@@ -93,6 +102,24 @@ public interface I_LCO_InvoiceWithholding
 	public int getC_Invoice_ID();
 
 	public org.compiere.model.I_C_Invoice getC_Invoice() throws RuntimeException;
+
+    /** Column name ConvertedTaxAmt */
+    public static final String COLUMNNAME_ConvertedTaxAmt = "ConvertedTaxAmt";
+
+	/** Set Converted Tax Amount	  */
+	public void setConvertedTaxAmt (BigDecimal ConvertedTaxAmt);
+
+	/** Get Converted Tax Amount	  */
+	public BigDecimal getConvertedTaxAmt();
+
+    /** Column name ConvertedTaxBaseAmt */
+    public static final String COLUMNNAME_ConvertedTaxBaseAmt = "ConvertedTaxBaseAmt";
+
+	/** Set Converted Tax Base Amount	  */
+	public void setConvertedTaxBaseAmt (BigDecimal ConvertedTaxBaseAmt);
+
+	/** Get Converted Tax Base Amount	  */
+	public BigDecimal getConvertedTaxBaseAmt();
 
     /** Column name Created */
     public static final String COLUMNNAME_Created = "Created";
@@ -190,6 +217,24 @@ public interface I_LCO_InvoiceWithholding
 	  */
 	public boolean isActive();
 
+    /** Column name IsCalcOnAllocation */
+    public static final String COLUMNNAME_IsCalcOnAllocation = "IsCalcOnAllocation";
+
+	/** Set Is Calc On Allocation	  */
+	public void setIsCalcOnAllocation (boolean IsCalcOnAllocation);
+
+	/** Get Is Calc On Allocation	  */
+	public boolean isCalcOnAllocation();
+
+    /** Column name IsCalcOnInvoice */
+    public static final String COLUMNNAME_IsCalcOnInvoice = "IsCalcOnInvoice";
+
+	/** Set Is Calc On Invoice	  */
+	public void setIsCalcOnInvoice (boolean IsCalcOnInvoice);
+
+	/** Get Is Calc On Invoice	  */
+	public boolean isCalcOnInvoice();
+
     /** Column name IsCalcOnPayment */
     public static final String COLUMNNAME_IsCalcOnPayment = "IsCalcOnPayment";
 
@@ -211,6 +256,15 @@ public interface I_LCO_InvoiceWithholding
 	  * Tax is included in the price 
 	  */
 	public boolean isTaxIncluded();
+
+    /** Column name ITS_VoucherWithholding_ID */
+    public static final String COLUMNNAME_ITS_VoucherWithholding_ID = "ITS_VoucherWithholding_ID";
+
+	/** Set Voucher Withholding	  */
+	public void setITS_VoucherWithholding_ID (int ITS_VoucherWithholding_ID);
+
+	/** Get Voucher Withholding	  */
+	public int getITS_VoucherWithholding_ID();
 
     /** Column name LCO_CreateWithholdingReversal */
     public static final String COLUMNNAME_LCO_CreateWithholdingReversal = "LCO_CreateWithholdingReversal";
@@ -238,15 +292,6 @@ public interface I_LCO_InvoiceWithholding
 
 	/** Get LCO_InvoiceWithholding_UU	  */
 	public String getLCO_InvoiceWithholding_UU();
-
-    /** Column name LCO_PrintedFormControl_ID */
-    public static final String COLUMNNAME_LCO_PrintedFormControl_ID = "LCO_PrintedFormControl_ID";
-
-	/** Set Printed Form Control	  */
-	public void setLCO_PrintedFormControl_ID (int LCO_PrintedFormControl_ID);
-
-	/** Get Printed Form Control	  */
-	public int getLCO_PrintedFormControl_ID();
 
     /** Column name LCO_WithholdingRule_ID */
     public static final String COLUMNNAME_LCO_WithholdingRule_ID = "LCO_WithholdingRule_ID";
