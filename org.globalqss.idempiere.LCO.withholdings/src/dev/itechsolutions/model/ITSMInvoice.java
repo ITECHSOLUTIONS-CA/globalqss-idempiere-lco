@@ -19,7 +19,6 @@ import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MInvoiceBatch;
 import org.compiere.model.MInvoiceBatchLine;
-import org.compiere.model.MLocation;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrgInfo;
 import org.compiere.model.MPriceList;
@@ -252,14 +251,16 @@ public class ITSMInvoice extends LCO_MInvoice {
 		int bp_isic_id = bp.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_ISIC_ID);
 		int bp_taxpayertype_id = bp.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_TaxPayerType_ID);
 		MBPartnerLocation mbpl = new MBPartnerLocation(invoice.getCtx(), invoice.getC_BPartner_Location_ID(), invoice.get_TrxName());
-		MLocation bpl = MLocation.getCopy(invoice.getCtx(), mbpl.getC_Location_ID(), invoice.get_TrxName());
+		MITSLocation bpl = MITSLocation.getCopy(invoice.getCtx(), mbpl.getC_Location_ID(), invoice.get_TrxName());
 		int bp_city_id = bpl.getC_City_ID();
+		int bp_Municipality_ID = bpl.getC_Municipality_ID();
 		// OrgInfo variables
 		MOrgInfo oi = MOrgInfo.getCopy(invoice.getCtx(), invoice.getAD_Org_ID(), invoice.get_TrxName());
 		int org_isic_id = oi.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_ISIC_ID);
 		int org_taxpayertype_id = oi.get_ValueAsInt(ColumnUtils.COLUMNNAME_LCO_TaxPayerType_ID);
-		MLocation ol = MLocation.getCopy(invoice.getCtx(), oi.getC_Location_ID(), invoice.get_TrxName());
+		MITSLocation ol = MITSLocation.getCopy(invoice.getCtx(), oi.getC_Location_ID(), invoice.get_TrxName());
 		int org_city_id = ol.getC_City_ID();
+		int org_Municipality_ID = ol.getC_Municipality_ID();
 		
 		StringBuilder where = new StringBuilder("IsSOTrx = ?");
 		ArrayList<Object> params = new ArrayList<Object>();
@@ -307,6 +308,16 @@ public class ITSMInvoice extends LCO_MInvoice {
 			paramsr.add(wt.getLCO_WithholdingType_ID());
 			paramsr.add(invoice.getDateInvoiced());
 			if (wrc.isUseBPISIC()) {
+				
+				String validMunicipality = oi.get_ValueAsString(ColumnUtils.COLUMNNAME_ValidMunicipality);
+				
+				if (ColumnUtils.VALIDATEMUNICIPALITY_None.equals(validMunicipality)
+						|| (ColumnUtils.VALIDATEMUNICIPALITY_Local.equals(validMunicipality)
+								&& bp_Municipality_ID != org_Municipality_ID)
+						|| (ColumnUtils.VALIDATEMUNICIPALITY_OutSiders.equals(validMunicipality)
+								&& bp_Municipality_ID == org_Municipality_ID))
+					continue;
+				
 				wherer.append(" AND LCO_BP_ISIC_ID=? ");
 				paramsr.add(bp_isic_id);
 			}

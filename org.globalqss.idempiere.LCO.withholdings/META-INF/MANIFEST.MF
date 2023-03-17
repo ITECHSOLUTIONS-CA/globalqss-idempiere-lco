@@ -7,13 +7,21 @@ Bundle-Activator: org.adempiere.plugin.utils.AdempiereActivator
 Bundle-Vendor: GlobalQSS
 Require-Bundle: org.adempiere.base;bundle-version="10.0.0",
  org.adempiere.plugin.utils;bundle-version="10.0.0",
- org.adempiere.base.callout;bundle-version="10.0.0"
+ org.adempiere.base.callout;bundle-version="10.0.0",
+ org.adempiere.ui;bundle-version="10.0.0",
+ org.idempiere.zk.extra;bundle-version="10.0.0",
+ zcommon;bundle-version="9.6.3",
+ zel;bundle-version="9.6.3",
+ zhtml;bundle-version="9.6.3",
+ zk;bundle-version="9.6.3",
+ zkbind;bundle-version="9.6.3",
+ zkplus;bundle-version="9.6.3",
+ zul;bundle-version="9.6.3",
+ org.adempiere.ui.zk;bundle-version="10.0.0"
 Export-Package: org.globalqss.model,
  org.globalqss.process
-Service-Component: OSGI-INF/lco_modelfactorywh.xml,
- OSGI-INF/lco_processfactorywh.xml,
- OSGI-INF/lco_calloutfactorywh.xml,
- OSGI-INF/lco_validatorwh.xml
+Service-Component: OSGI-INF/lco_modelfactorywh.xml,OSGI-INF/lco_processfactorywh.xml,OSGI-INF/lco_calloutfactorywh.xml,OSGI-INF/lco_validatorwh.xml,OSGI-INF/LocationExtendedDisplayFactory.xml,OSGI-INF/LocationExtendedEditorFactory.xml,
+ OSGI-INF/LocationExtendedLookupFactory.xml
 Import-Package: org.osgi.service.event
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
