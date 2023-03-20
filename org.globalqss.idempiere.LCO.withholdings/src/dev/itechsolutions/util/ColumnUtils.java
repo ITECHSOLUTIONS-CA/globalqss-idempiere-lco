@@ -59,6 +59,7 @@ public class ColumnUtils {
 	public static final String COLUMNNAME_HasMunicipality = "HasMunicipality";
 	public static final String COLUMNNAME_HasParish = "HasParish";
 	public static final String COLUMNNAME_ValidMunicipality = "ValidMunicipality";
+	public static final String COLUMNNAME_WithholdingAmt = "WithholdingAmt";
 	//----------------------End of Column Names------------------
 	
 	//----------------------List Column Values-------------------

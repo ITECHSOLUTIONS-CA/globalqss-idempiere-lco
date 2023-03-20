@@ -177,7 +177,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 	private MLCOInvoiceWithholding[] getUnprocessedLinesForAllocation() {
 		return Arrays.stream(getLines())
 				.filter(line -> !line.isProcessed() && line.isCalcOnAllocation())
-				.sorted(MLCOInvoiceWithholding::sortByCurrencyAndOrg)
+				.sorted(MLCOInvoiceWithholding::sortByInvoice)
 				.toArray(MLCOInvoiceWithholding[]::new);
 	}
 	
@@ -190,7 +190,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 	
 	private String translateWithholdingsToTax() {
 		MLCOInvoiceWithholding[] lines = getUnprocessedLinesForTax();
-		return MLCOInvoiceWithholding.translateToInvoiceTax(this, lines);
+		return MLCOInvoiceWithholding.translateToInvoiceTax(this, lines, false, true);
 	}
 	
 	private String allocateUnprocessedLines() {
@@ -428,7 +428,7 @@ public class MITSVoucherWithholding extends X_ITS_VoucherWithholding implements 
 		{
 			StringBuilder sql = new StringBuilder("SELECT vw.DocumentNo")
 					.append(" FROM ITS_VoucherWithholding vw")
-					.append(" INNER JOIN LCO_InvoiceWithholding iw ON iw.ITS_VoucherWithholding")
+					.append(" INNER JOIN LCO_InvoiceWithholding iw ON iw.ITS_VoucherWithholding_ID = vw.ITS_VoucherWithholding_ID")
 					.append(" WHERE vw.DocStatus NOT IN ('VO', 'RE')")
 					.append(" AND iw.C_Invoice_ID = ?")
 					.append(" AND vw.LCO_WithholdingType_ID = ?");

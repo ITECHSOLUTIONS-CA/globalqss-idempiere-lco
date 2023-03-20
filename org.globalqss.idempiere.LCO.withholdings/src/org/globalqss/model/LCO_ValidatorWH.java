@@ -66,6 +66,7 @@ import org.osgi.service.event.Event;
 
 import dev.itechsolutions.model.ITSMInvoice;
 import dev.itechsolutions.model.MITSPurchaseSalesBook;
+import dev.itechsolutions.model.MITSVoucherWithholding;
 import dev.itechsolutions.util.ColumnUtils;
 import dev.itechsolutions.util.POUtil;
 
@@ -98,6 +99,8 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		registerTableEvent(IEventTopics.DOC_BEFORE_PREPARE, MInvoice.Table_Name);
 		registerTableEvent(IEventTopics.DOC_BEFORE_COMPLETE, MInvoice.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_COMPLETE, MInvoice.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSECORRECT, MInvoice.Table_Name);
+		registerTableEvent(IEventTopics.DOC_BEFORE_REVERSEACCRUAL, MInvoice.Table_Name);
 		registerTableEvent(IEventTopics.DOC_BEFORE_COMPLETE, MPayment.Table_Name);
 		registerTableEvent(IEventTopics.DOC_AFTER_COMPLETE, MAllocationHdr.Table_Name);
 		registerTableEvent(IEventTopics.ACCT_FACTS_VALIDATE, MAllocationHdr.Table_Name);
@@ -201,11 +204,14 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 							newiwh.setAD_Org_ID(iwh.getAD_Org_ID());
 							newiwh.setC_Invoice_ID(inv.getC_Invoice_ID());
 							newiwh.setLCO_WithholdingType_ID(iwh.getLCO_WithholdingType_ID());
+							newiwh.setLCO_WithholdingRule_ID(iwh.getLCO_WithholdingRule_ID());
 							newiwh.setPercent(iwh.getPercent());
 							newiwh.setTaxAmt(iwh.getTaxAmt().negate());
 							newiwh.setTaxBaseAmt(iwh.getTaxBaseAmt().negate());
 							newiwh.setC_Tax_ID(iwh.getC_Tax_ID());
 							newiwh.setIsCalcOnPayment(iwh.isCalcOnPayment());
+							newiwh.setIsCalcOnInvoice(iwh.isCalcOnInvoice());
+							newiwh.setIsCalcOnAllocation(iwh.isCalcOnAllocation());
 							newiwh.setIsActive(iwh.isActive());
 							newiwh.setDateAcct(inv.getDateAcct());
 							newiwh.setDateTrx(inv.getDateInvoiced());
@@ -260,18 +266,15 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 		
 		//Before Reverse - Add By José Castañeda
 		if(po instanceof MInvoice
-				&& type.equals(IEventTopics.DOC_BEFORE_REVERSEACCRUAL))
+				&& (type.equals(IEventTopics.DOC_BEFORE_REVERSEACCRUAL)
+						|| type.equals(IEventTopics.DOC_BEFORE_REVERSECORRECT)))
 		{
 			MInvoice invoice = (MInvoice) po;
-
-			if(MSysConfig.getBooleanValue("VALIDATE_IF_EXISTS_BOOK", false, po.getAD_Client_ID()))
-				validateIfExistsBook(invoice);			
-		}
-		
-		if(po instanceof MInvoice
-				&& type.equals(IEventTopics.DOC_BEFORE_REVERSECORRECT))
-		{
-			MInvoice invoice = (MInvoice) po;
+			
+			msg = reverseWithholdingCalcOnAllocation(invoice);
+			
+			if (!Util.isEmpty(msg, true))
+				throw new AdempiereException(msg);
 			
 			if(MSysConfig.getBooleanValue("VALIDATE_IF_EXISTS_BOOK", false, po.getAD_Client_ID()))
 				validateIfExistsBook(invoice);			
@@ -311,13 +314,65 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				&& (type.equals(IEventTopics.DOC_AFTER_VOID) ||
 					type.equals(IEventTopics.DOC_AFTER_REVERSECORRECT) ||
 					type.equals(IEventTopics.DOC_AFTER_REVERSEACCRUAL))) {
+			
+			msg = reverseAllocationCalcOnAllocation((MAllocationHdr) po);
+			
+			if (!Util.isEmpty(msg, true))
+				throw new AdempiereException(msg);
+			
 			msg = reversePaymentWithholdings((MAllocationHdr) po);
-			if (msg != null)
+			if (!Util.isEmpty(msg, true))
 				throw new RuntimeException(msg);
 		}
-
 	}	//	doHandleEvent
-
+	
+	private String reverseWithholdingCalcOnAllocation(MInvoice invoice) {
+		
+		List<MLCOInvoiceWithholding> withholdings = MLCOInvoiceWithholding.getFromInvoice(invoice.getCtx()
+				, invoice.get_ID(), invoice.get_TrxName());
+		
+		for (MLCOInvoiceWithholding withholding: withholdings)
+		{
+			if (withholding.getITS_VoucherWithholding_ID() > 0)
+			{
+				MITSVoucherWithholding voucher = new MITSVoucherWithholding(invoice.getCtx()
+						, withholding.getITS_VoucherWithholding_ID()
+						, invoice.get_TrxName());
+				
+				return Msg.getMsg(invoice.getCtx(), "InvoiceInWithholding"
+						, new Object[] {voucher.getDocumentNo()});
+			}
+			
+			if (withholding.isCalcOnAllocation())
+			{
+				withholding.setC_AllocationLine_ID(0);
+				withholding.saveEx();
+			}
+		}
+		
+		return null;
+	}
+	
+	private String reverseAllocationCalcOnAllocation(MAllocationHdr allocation) {
+		
+		StringBuilder sql = new StringBuilder("SELECT ci.DocumentNo FROM LCO_InvoiceWithholding iw")
+				.append(" INNER JOIN C_Invoice ci ON ci.C_Invoice_ID = iw.C_Invoice_ID")
+				.append(" WHERE iw.Processed = 'Y' AND iw.IsCalcOnAllocation = 'Y' AND EXISTS(")
+					.append(" SELECT 1 FROM C_AllocationLine al WHERE al.C_AllocationHdr_ID = ?")
+					.append(" AND al.C_AllocationLine_ID = iw.C_AllocationLine_ID")
+				.append(")");
+		
+		String documentNo = DB.getSQLValueString(allocation.get_TrxName()
+				, sql.toString()
+				, allocation.get_ID());
+		
+		if (!Util.isEmpty(documentNo, true))
+			return Msg.getMsg(allocation.getCtx(), "AllocationAlreadyInWithholding"
+					,new Object[] {documentNo});
+		
+		return null;
+	}
+	
 	private String clearInvoiceWithholdingAmtFromInvoice(MInvoice inv) {
 		// Clear invoice withholding amount
 
@@ -847,7 +902,7 @@ public class LCO_ValidatorWH extends AbstractEventHandler
 				.collect(Collectors.toList());
 		
 		return MLCOInvoiceWithholding.translateToInvoiceTax(null
-				, withholdings.toArray(MLCOInvoiceWithholding[]::new));
+				, withholdings.toArray(MLCOInvoiceWithholding[]::new), true, false);
 	}
 
 }	//	LCO_ValidatorWH

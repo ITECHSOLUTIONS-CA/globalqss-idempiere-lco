@@ -30,8 +30,10 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAllocationHdr;
 import org.compiere.model.MAllocationLine;
 import org.compiere.model.MDocType;
@@ -48,6 +50,7 @@ import org.idempiere.cache.ImmutableIntPOCache;
 import org.idempiere.cache.ImmutablePOSupport;
 
 import dev.itechsolutions.model.MITSVoucherWithholding;
+import dev.itechsolutions.util.ColumnUtils;
 
 /**
  *	Invoice Withholding Model
@@ -69,7 +72,9 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 	private X_LCO_WithholdingRule rule = null;
 	private X_LCO_WithholdingCalc calc = null;
 	
-	private MInvoice invoice;
+	private MAllocationLine m_aLine = null;
+	
+	private MInvoice invoice = null;
 	
 	/**************************************************************************
 	 * 	Default Constructor
@@ -155,7 +160,16 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 		if (inv.getReversal_ID() <= 0) {
 			if (getLCO_WithholdingRule_ID() > 0) {
 				// Fill isCalcOnPayment according to rule
+				X_LCO_WithholdingRule rule = getLCO_WithholdingRule();
 				X_LCO_WithholdingCalc wc = getCalc();
+				
+				if (wc == null)
+				{
+					log.saveError("Error", new AdempiereException("@LCO_WithholdingCalc_ID@ @NotFound@"
+							+ " @LCO_WithholdingRule_ID@ " + rule.getName()));
+					return false;
+				}
+				
 				setIsCalcOnPayment(wc.isCalcOnPayment());
 				setIsCalcOnInvoice(wc.isCalcOnInvoice());
 				setIsCalcOnAllocation(wc.isCalcOnAllocation());
@@ -177,8 +191,12 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 	
 	@Override
 	public MInvoice getC_Invoice() throws RuntimeException {
-		if (invoice == null || invoice.getC_Invoice_ID() != getC_Invoice_ID())
+		if (invoice != null && getC_Invoice_ID() != invoice.get_ID())
+			invoice = null;
+		
+		if (invoice == null && getC_Invoice_ID() > 0)
 			invoice = (MInvoice) super.getC_Invoice();
+		
 		return invoice;
 	}
 	
@@ -212,7 +230,7 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 			return success;
 		return LCO_MInvoice.updateHeaderWithholding(getC_Invoice_ID(), get_TrxName());
 	}	//	afterDelete
-
+	
 	@Override
 	public PO markImmutable() {
 		if (is_Immutable())
@@ -249,15 +267,24 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 	public X_LCO_WithholdingCalc getCalc() {
 		X_LCO_WithholdingRule rule = getLCO_WithholdingRule();
 		
-		if (calc == null || calc.getLCO_WithholdingCalc_ID() != rule.getLCO_WithholdingCalc_ID())
+		if (rule == null
+				|| (calc != null && calc.get_ID() != rule.getLCO_WithholdingCalc_ID()))
+			calc = null;
+		
+		if (calc == null && rule != null && rule.getLCO_WithholdingCalc_ID() > 0)
 			calc = (X_LCO_WithholdingCalc) rule.getLCO_WithholdingCalc();
+		
 		return calc;
 	}
 	
 	@Override
 	public X_LCO_WithholdingRule getLCO_WithholdingRule() throws RuntimeException {
-		if (rule == null || rule.getLCO_WithholdingRule_ID() != getLCO_WithholdingRule_ID())
+		if (rule != null && rule.get_ID() != getLCO_WithholdingRule_ID())
+			rule = null;
+		
+		if (rule == null && getLCO_WithholdingRule_ID() > 0)
 			rule = (X_LCO_WithholdingRule) super.getLCO_WithholdingRule();
+		
 		return rule;
 	}
 	
@@ -284,8 +311,13 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 				: wh1.getAD_Org_ID() == wh2.getAD_Org_ID() ? 0 : 1;
 	}
 	
+	public static int sortByInvoice(MLCOInvoiceWithholding wh1, MLCOInvoiceWithholding wh2) {
+		return wh1.getC_Invoice_ID() < wh2.getC_Invoice_ID() ? -1
+				: (wh1.getC_Invoice_ID() == wh2.getC_Invoice_ID() ? 0: 1);
+	}
+	
 	public static final String translateToInvoiceTax(MITSVoucherWithholding voucher
-			, MLCOInvoiceWithholding[] lines) {
+			, MLCOInvoiceWithholding[] lines, boolean resetWhAmt, boolean postIt) {
 		
 		if (lines.length == 0)
 			return null;
@@ -310,7 +342,7 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 				{
 					if (invoice != null)
 					{
-						errorMsg = processInvoice(invoice, sumIt);
+						errorMsg = processInvoice(invoice, sumIt, resetWhAmt, postIt);
 						if (!Util.isEmpty(errorMsg, true))
 							return errorMsg;
 					}
@@ -330,7 +362,6 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 			if (voucher != null)
 			{
 				line.setDocumentNo(voucher.getDocumentNo());
-				line.setDateTrx(voucher.getDateTrx());
 				line.setDateAcct(voucher.getDateAcct());
 			}
 			line.setProcessed(true);
@@ -341,7 +372,7 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 		if (it != null)
 		{
 			it.saveEx();
-			errorMsg = processInvoice(invoice, sumIt);
+			errorMsg = processInvoice(invoice, sumIt, resetWhAmt, postIt);
 			
 			if (!Util.isEmpty(errorMsg, true))
 				return errorMsg;
@@ -357,7 +388,7 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 		Properties ctx = lines[0].getCtx();
 		String trxName = lines[0].get_TrxName();
 		boolean isSOTrx = voucher == null ? invoice.isSOTrx() : voucher.isSOTrx();
-		Timestamp dateTrx = voucher == null ? invoice.getDateInvoiced() : voucher.getDateTrx();
+		
 		Timestamp dateAcct = voucher == null ? invoice.getDateAcct() : voucher.getDateAcct();
 		
 		MDocType[] docTypes = MDocType.getOfDocBaseType(ctx, MDocType.DOCBASETYPE_PaymentAllocation);
@@ -370,18 +401,20 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 			return "@AllocationDocumentTypeNotFound@"
 					+ " @IsSOTrx@ = " + (isSOTrx ? "@yes@" : "@no@");
 		
-		int lastC_Currency_ID = -1;
-		int lastAD_Org_ID = -1;
+		int lastC_Invoice_ID = -1;
 		MAllocationHdr allocation = null;
 		
 		for (MLCOInvoiceWithholding line: lines)
 		{
+			MInvoice inv = line.getC_Invoice();
+			
 			if (allocation == null
-					|| line.getC_Invoice().getC_Currency_ID() != lastC_Currency_ID
-					|| line.getAD_Org_ID() != lastAD_Org_ID)
+					|| line.getC_Invoice_ID() != lastC_Invoice_ID)
 			{
-				lastC_Currency_ID = line.getC_Invoice().getC_Currency_ID();
-				lastAD_Org_ID = line.getAD_Org_ID();
+				lastC_Invoice_ID = line.getC_Invoice_ID();
+				
+				if (allocation != null && invoice != null)
+					allocation.set_Attribute(DocumentEngine.DOCUMENT_POST_IMMEDIATE_AFTER_COMPLETE, Boolean.FALSE);
 				
 				if (allocation != null
 						&& !allocation.processIt(MAllocationHdr.ACTION_Complete))
@@ -389,13 +422,14 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 				else if (allocation != null)
 					allocation.saveEx();
 				
+				if (allocation != null && invoice != null)
+					invoice.getDocsPostProcess().add(allocation);
+				
 				allocation = createAllocation(ctx, docType.get_ID()
-						, lastC_Currency_ID
-						, lastAD_Org_ID, dateTrx
+						, line.getC_Invoice().getC_Currency_ID()
+						, line.getAD_Org_ID(), inv.getDateInvoiced()
 						, dateAcct, trxName);
 			}
-			
-			MInvoice inv = line.getC_Invoice();
 			
 			BigDecimal writeOffAmt = line.getTaxAmt();
 			
@@ -423,7 +457,6 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 			if (voucher != null)
 			{
 				line.setDocumentNo(voucher.getDocumentNo());
-				line.setDateTrx(voucher.getDateTrx());
 				line.setDateAcct(voucher.getDateAcct());
 			}
 			
@@ -451,17 +484,23 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 		return null;
 	}
 	
-	private static String processInvoice(MInvoice inv, BigDecimal sumit) {
-		BigDecimal actualamt = (BigDecimal) inv.get_Value("WithholdingAmt");
-		if (actualamt == null)
-			actualamt = new BigDecimal(0);
-		if (actualamt.compareTo(sumit) != 0 || sumit.signum() != 0) {
+	private static String processInvoice(MInvoice inv, BigDecimal sumit
+			, boolean resetWhAmt, boolean postIt) {
+		BigDecimal actualamt = Optional.ofNullable((BigDecimal) inv.get_Value(ColumnUtils.COLUMNNAME_WithholdingAmt))
+				.orElse(BigDecimal.ZERO);
+		
+		/*if (actualamt.compareTo(sumit) != 0 || sumit.signum() != 0) {
 			inv.set_CustomColumn("WithholdingAmt", sumit);
 			// Subtract to invoice grand total the value of withholdings
 			BigDecimal gt = inv.getGrandTotal();
 			inv.setGrandTotal(gt.subtract(sumit));
 			inv.saveEx();  // need to save here in order to let apply get the right total
-		}
+		}*/
+		
+		actualamt = sumit.add(resetWhAmt ? BigDecimal.ZERO : actualamt);
+		inv.setGrandTotal(inv.getGrandTotal().subtract(sumit));
+		inv.set_ValueOfColumn(ColumnUtils.COLUMNNAME_WithholdingAmt, actualamt);
+		inv.saveEx();
 		
 		if (sumit.signum() != 0) {
 			// GrandTotal changed!  If there are payment schedule records they need to be recalculated
@@ -482,7 +521,15 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 					break;
 			}
 		}
-		return null;
+		
+		String error = null;
+		
+		if (postIt)
+			error = DocumentEngine.postImmediate(inv.getCtx(), inv.getAD_Client_ID()
+					, MInvoice.Table_ID, inv.get_ID()
+					, true, inv.get_TrxName());
+		
+		return error;
 	}
 	
 	private static MAllocationHdr createAllocation(Properties ctx, int C_DocType_ID
@@ -519,5 +566,39 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 		}
 		
 		return it;
+	}
+	
+	public BigDecimal getOldTaxAmt() {
+		return Optional.ofNullable((BigDecimal) get_ValueOld(COLUMNNAME_TaxAmt))
+				.orElse(BigDecimal.ZERO);
+	}
+	
+	public BigDecimal getTaxAmtDifference() {
+		return getTaxAmt().subtract(getOldTaxAmt());
+	}
+	
+	public BigDecimal getOldTaxBaseAmt() {
+		return Optional.ofNullable((BigDecimal) get_ValueOld(COLUMNNAME_TaxBaseAmt))
+				.orElse(BigDecimal.ZERO);
+	}
+	
+	public BigDecimal getTaxBaseAmtDifference() {
+		return getTaxBaseAmt().subtract(getOldTaxBaseAmt());
+	}
+	
+	public void setAllocationLine(MAllocationLine aLine) {
+		setC_AllocationLine_ID(aLine.get_ID());
+		m_aLine = aLine;
+	}
+	
+	@Override
+	public MAllocationLine getC_AllocationLine() throws RuntimeException {
+		if (m_aLine != null && m_aLine.get_ID() != getC_AllocationLine_ID())
+			m_aLine = null;
+		
+		if (m_aLine == null && getC_AllocationLine_ID() > 0)
+			m_aLine = (MAllocationLine) super.getC_AllocationLine();
+		
+		return m_aLine;
 	}
 }	//	MLCOInvoiceWithholding
