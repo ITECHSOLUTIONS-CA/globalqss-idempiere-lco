@@ -15,12 +15,11 @@ import dev.itechsolutions.model.MITSVoucherWithholding;
 public class GenerateInvoiceWithholding extends SvrProcess {
 	
 	@Override
-	protected void prepare() {
-	}
+	protected void prepare() {/****/}
 	
 	@Override
-	protected String doIt() throws Exception {
-		
+	protected String doIt() throws Exception
+	{	
 		MITSVoucherWithholding voucher = new MITSVoucherWithholding(getCtx(), getRecord_ID(), get_TrxName());
 		int nInsert = 0;
 		ITSMInvoice[] invoices = ITSMInvoice.getOfVoucherWithholding(voucher);

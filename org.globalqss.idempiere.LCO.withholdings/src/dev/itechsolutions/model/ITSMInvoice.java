@@ -538,7 +538,10 @@ public class ITSMInvoice extends LCO_MInvoice {
 					iwh.setC_Tax_ID(tax.getC_Tax_ID());
 					iwh.setPercent(tax.getRate());
 					iwh.setProcessed(false);
-					int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), invoice.getM_PriceList_ID());
+					//int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), invoice.getM_PriceList_ID());
+					MPriceList pl = MPriceList.get(invoice.getM_PriceList_ID());
+					int stdPrecision = pl.getPricePrecision();
+					
 					BigDecimal taxamt = tax.calculateTax(base, false, stdPrecision);
 					BigDecimal amountRefunded = wc.getAmountRefunded(invoice);
 					if (amountRefunded.compareTo(Env.ZERO) > 0) {
@@ -978,8 +981,8 @@ public class ITSMInvoice extends LCO_MInvoice {
 					iwh.setLCO_WithholdingType_ID(wt.getLCO_WithholdingType_ID());
 					iwh.setC_Tax_ID(tax.getC_Tax_ID());
 					iwh.setPercent(tax.getRate());
-					//iwh.setProcessed(false);
-					iwh.setProcessed(true);
+					iwh.setProcessed(false);
+					//iwh.setProcessed(true);
 					//int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), invoice.getM_PriceList_ID());
 					MPriceList pl = MPriceList.get(invoice.getM_PriceList_ID());
 					int stdPrecision = pl.getPricePrecision();

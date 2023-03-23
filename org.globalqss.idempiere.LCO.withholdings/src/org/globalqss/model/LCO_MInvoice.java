@@ -389,7 +389,10 @@ public class LCO_MInvoice extends MInvoice
 					iwh.setC_Tax_ID(tax.getC_Tax_ID());
 					iwh.setPercent(tax.getRate());
 					iwh.setProcessed(false);
-					int stdPrecision = MPriceList.getStandardPrecision(getCtx(), getM_PriceList_ID());
+					//int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), getM_PriceList_ID());
+					MPriceList pl = MPriceList.get(getM_PriceList_ID());
+					int stdPrecision = pl.getPricePrecision();
+					
 					BigDecimal taxamt = tax.calculateTax(base, false, stdPrecision);
 					if (wc.getAmountRefunded() != null &&
 							wc.getAmountRefunded().compareTo(Env.ZERO) > 0) {

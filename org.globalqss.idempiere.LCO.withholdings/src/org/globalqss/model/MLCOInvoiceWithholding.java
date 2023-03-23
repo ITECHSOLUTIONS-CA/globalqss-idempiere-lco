@@ -485,9 +485,18 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 	}
 	
 	private static String processInvoice(MInvoice inv, BigDecimal sumit
-			, boolean resetWhAmt, boolean postIt) {
+			, boolean resetWhAmt, boolean postIt) 
+	{	
 		BigDecimal actualamt = Optional.ofNullable((BigDecimal) inv.get_Value(ColumnUtils.COLUMNNAME_WithholdingAmt))
 				.orElse(BigDecimal.ZERO);
+		
+		if(!resetWhAmt)
+		{
+			List<MLCOInvoiceWithholding> invoiceWithholdings = getFromInvoice(inv.getCtx(), inv.getC_Invoice_ID(), inv.get_TrxName());
+			
+			if(invoiceWithholdings.toArray().length <= 1)
+				actualamt = BigDecimal.ZERO;
+		}
 		
 		/*if (actualamt.compareTo(sumit) != 0 || sumit.signum() != 0) {
 			inv.set_CustomColumn("WithholdingAmt", sumit);

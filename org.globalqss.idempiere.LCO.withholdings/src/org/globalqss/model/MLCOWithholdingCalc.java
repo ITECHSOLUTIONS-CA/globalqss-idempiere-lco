@@ -130,7 +130,9 @@ public class MLCOWithholdingCalc extends X_LCO_WithholdingCalc implements Immuta
 		BigDecimal rate = getRate(inv);
 		
 		amount = amount.multiply(rate);
-		int stdPrecision = MPriceList.getStandardPrecision(getCtx(), inv.getM_PriceList_ID());
+		//int stdPrecision = MPriceList.getStandardPrecision(getCtx(), inv.getM_PriceList_ID());
+		MPriceList pl = MPriceList.get(inv.getM_PriceList_ID());
+		int stdPrecision = pl.getPricePrecision();
 		
 		if (amount.scale() > stdPrecision)
 			amount = amount.setScale(stdPrecision, RoundingMode.HALF_UP);

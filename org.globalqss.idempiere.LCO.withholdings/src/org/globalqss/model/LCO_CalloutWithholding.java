@@ -201,7 +201,9 @@ public class LCO_CalloutWithholding extends AnnotationBasedColumnCalloutFactory
 					"SELECT M_PriceList_ID FROM C_Invoice WHERE C_Invoice_ID=?",
 					((Integer) mTab.getValue(MLCOInvoiceWithholding.COLUMNNAME_C_Invoice_ID)).intValue());
 			taxamt = percent.multiply(taxbaseamt).divide(Env.ONEHUNDRED);
-			int stdPrecision = MPriceList.getStandardPrecision(ctx, pricelist_id);
+			//int stdPrecision = MPriceList.getStandardPrecision(ctx, pricelist_id);
+			MPriceList pl = MPriceList.get(pricelist_id);
+			int stdPrecision = pl.getPricePrecision();
 			taxamt = taxamt.setScale(stdPrecision, RoundingMode.HALF_UP);
 		}
 		mTab.setValue(MLCOInvoiceWithholding.COLUMNNAME_TaxAmt, taxamt);
