@@ -103,6 +103,15 @@ public interface I_LCO_InvoiceWithholding
 
 	public org.compiere.model.I_C_Invoice getC_Invoice() throws RuntimeException;
 
+    /** Column name ConvertedAmountRefunded */
+    public static final String COLUMNNAME_ConvertedAmountRefunded = "ConvertedAmountRefunded";
+
+	/** Set Converted Amount Refunded	  */
+	public void setConvertedAmountRefunded (BigDecimal ConvertedAmountRefunded);
+
+	/** Get Converted Amount Refunded	  */
+	public BigDecimal getConvertedAmountRefunded();
+
     /** Column name ConvertedTaxAmt */
     public static final String COLUMNNAME_ConvertedTaxAmt = "ConvertedTaxAmt";
 
@@ -340,6 +349,15 @@ public interface I_LCO_InvoiceWithholding
 	  * The document has been processed
 	  */
 	public boolean isProcessed();
+
+    /** Column name Recalculate */
+    public static final String COLUMNNAME_Recalculate = "Recalculate";
+
+	/** Set Recalculate	  */
+	public void setRecalculate (String Recalculate);
+
+	/** Get Recalculate	  */
+	public String getRecalculate();
 
     /** Column name TaxAmt */
     public static final String COLUMNNAME_TaxAmt = "TaxAmt";

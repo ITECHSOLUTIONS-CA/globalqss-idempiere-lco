@@ -386,6 +386,13 @@ public class ITSMInvoice extends LCO_MInvoice {
 				.setOnlyActiveRecords(true)
 				.setParameters(paramsr)
 				.list();
+			
+			if(wrs.isEmpty())
+			{
+				iwh.setTaxBaseAmt(BigDecimal.ZERO);
+				iwh.setTaxAmt(BigDecimal.ZERO);
+			}
+			
 			for (X_LCO_WithholdingRule wr : wrs)
 			{
 				// for each applicable rule
@@ -599,16 +606,27 @@ public class ITSMInvoice extends LCO_MInvoice {
 				return 0;
 			}
 			
-			int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), invoice.getM_PriceList_ID());
+			//int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), invoice.getM_PriceList_ID());
+			MPriceList pl = MPriceList.get(invoice.getM_PriceList_ID());
+			int stdPrecision = pl.getPricePrecision();
 			
 			BigDecimal convertedTaxBaseAmt = iwh.getTaxBaseAmt().multiply(rate);
 			BigDecimal convertedTaxAmt = iwh.getTaxAmt().multiply(rate);
+			BigDecimal convertedAmountRefunded = iwh.getAmountRefunded().multiply(rate);
 			
 			if (convertedTaxAmt.scale() > stdPrecision)
 				convertedTaxAmt = convertedTaxAmt.setScale(stdPrecision, RoundingMode.HALF_UP);
 			
 			if (convertedTaxBaseAmt.scale() > stdPrecision)
 				convertedTaxBaseAmt = convertedTaxBaseAmt.setScale(stdPrecision, RoundingMode.HALF_UP);
+			
+			if (convertedAmountRefunded.compareTo(Env.ZERO) > 0)
+			{
+				if (convertedAmountRefunded.scale() > stdPrecision)
+					convertedAmountRefunded = convertedAmountRefunded.setScale(stdPrecision, RoundingMode.HALF_UP);
+				
+				iwh.setConvertedAmountRefunded(convertedAmountRefunded);
+			}
 			
 			setVoucherWithholding(iwh, voucher.get_ID()
 					, convertedTaxBaseAmt
@@ -960,8 +978,12 @@ public class ITSMInvoice extends LCO_MInvoice {
 					iwh.setLCO_WithholdingType_ID(wt.getLCO_WithholdingType_ID());
 					iwh.setC_Tax_ID(tax.getC_Tax_ID());
 					iwh.setPercent(tax.getRate());
-					iwh.setProcessed(false);
-					int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), invoice.getM_PriceList_ID());
+					//iwh.setProcessed(false);
+					iwh.setProcessed(true);
+					//int stdPrecision = MPriceList.getStandardPrecision(invoice.getCtx(), invoice.getM_PriceList_ID());
+					MPriceList pl = MPriceList.get(invoice.getM_PriceList_ID());
+					int stdPrecision = pl.getPricePrecision();
+					
 					BigDecimal taxamt = tax.calculateTax(base, false, stdPrecision);
 					BigDecimal amountRefunded = wc.getAmountRefunded(invoice);
 					if (amountRefunded.compareTo(Env.ZERO) > 0) {
@@ -979,12 +1001,21 @@ public class ITSMInvoice extends LCO_MInvoice {
 					{
 						BigDecimal convertedBase = base.multiply(rate);
 						BigDecimal convertedTaxAmt = taxamt.multiply(rate);
+						BigDecimal convertedAmountRefunded = amountRefunded.multiply(rate);
 						
 						if (convertedBase.scale() > stdPrecision)
 							convertedBase = convertedBase.setScale(stdPrecision, RoundingMode.HALF_UP);
 						
 						if (convertedTaxAmt.scale() > stdPrecision)
 							convertedTaxAmt = convertedTaxAmt.setScale(stdPrecision, RoundingMode.HALF_UP);
+						
+						if (convertedAmountRefunded.compareTo(Env.ZERO) > 0)
+						{
+							if (convertedAmountRefunded.scale() > stdPrecision)
+								convertedAmountRefunded = convertedAmountRefunded.setScale(stdPrecision, RoundingMode.HALF_UP);
+							
+							iwh.setConvertedAmountRefunded(convertedAmountRefunded);
+						}
 						
 						setVoucherWithholding(iwh, voucher.get_ID()
 								, convertedBase, convertedTaxAmt);

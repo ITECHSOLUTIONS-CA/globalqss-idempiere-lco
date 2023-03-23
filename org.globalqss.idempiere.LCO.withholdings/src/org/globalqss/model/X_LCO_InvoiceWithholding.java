@@ -34,7 +34,7 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20230307L;
+	private static final long serialVersionUID = 20230322L;
 
     /** Standard Constructor */
     public X_LCO_InvoiceWithholding (Properties ctx, int LCO_InvoiceWithholding_ID, String trxName)
@@ -180,6 +180,24 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
+	}
+
+	/** Set Converted Amount Refunded.
+		@param ConvertedAmountRefunded Converted Amount Refunded
+	*/
+	public void setConvertedAmountRefunded (BigDecimal ConvertedAmountRefunded)
+	{
+		set_ValueNoCheck (COLUMNNAME_ConvertedAmountRefunded, ConvertedAmountRefunded);
+	}
+
+	/** Get Converted Amount Refunded.
+		@return Converted Amount Refunded	  */
+	public BigDecimal getConvertedAmountRefunded()
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_ConvertedAmountRefunded);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
 	}
 
 	/** Set Converted Tax Amount.
@@ -565,6 +583,21 @@ public class X_LCO_InvoiceWithholding extends PO implements I_LCO_InvoiceWithhol
 			return "Y".equals(oo);
 		}
 		return false;
+	}
+
+	/** Set Recalculate.
+		@param Recalculate Recalculate
+	*/
+	public void setRecalculate (String Recalculate)
+	{
+		set_Value (COLUMNNAME_Recalculate, Recalculate);
+	}
+
+	/** Get Recalculate.
+		@return Recalculate	  */
+	public String getRecalculate()
+	{
+		return (String)get_Value(COLUMNNAME_Recalculate);
 	}
 
 	/** Set Tax Amount.
