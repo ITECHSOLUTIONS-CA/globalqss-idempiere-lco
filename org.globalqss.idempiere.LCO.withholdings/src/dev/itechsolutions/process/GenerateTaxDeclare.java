@@ -31,37 +31,36 @@ import dev.itechsolutions.model.I_ITS_VoucherWithholding;
 @Process
 public class GenerateTaxDeclare extends SvrProcess {
 	
-	@Parameter
+	@Parameter(name = "AD_Org_ID")
 	private int p_AD_Org_ID = -1;
 	
-	@Parameter
+	@Parameter(name = "LCO_WithholdingType_ID")
 	private int p_LCO_WithholdingType_ID = -1;
 	
-	@Parameter
+	@Parameter(name = "DateDoc")
 	private Timestamp p_DateDoc = null;
 	
-	@Parameter
+	@Parameter(name = "DateFrom")
 	private Timestamp p_Date = null;
 	
-	@Parameter
+	@Parameter(name = "DateFrom_To")
 	private Timestamp p_Date_to = null;
 	
-	@Parameter
+	@Parameter(name = "C_Currency_ID")
 	private int p_C_Currency_ID = -1;
 	
-	@Parameter
+	@Parameter(name = "C_ConversionType_ID")
 	private int p_C_ConversionType_ID = -1;
 	
-	@Parameter
+	@Parameter(name = "DocAction")
 	private String p_DocAction = null;
 	
 	@Override
-	protected void prepare() {
-	}
+	protected void prepare() {/****/}
 	
 	@Override
-	protected String doIt() throws Exception {
-		
+	protected String doIt() throws Exception
+	{	
 		//Validate Parameters
 		if (p_AD_Org_ID <= 0)
 			throw new FillMandatoryException("AD_Org_ID");
@@ -113,7 +112,7 @@ public class GenerateTaxDeclare extends SvrProcess {
 		MBPartner bpartner = new MBPartner(getCtx(), C_BPartner_ID, get_TrxName());
 		
 		int C_Tax_ID = DB.getSQLValue(get_TrxName()
-				, "SELECT C_Charge_ID FROM C_Charge WHERE C_TaxCategory_ID = ?"
+				, "SELECT C_Tax_ID FROM C_Tax WHERE C_TaxCategory_ID = ?"
 				  + " ORDER BY IsDefault DESC"
 				, charge.getC_TaxCategory_ID());
 		
@@ -168,12 +167,15 @@ public class GenerateTaxDeclare extends SvrProcess {
 		MDocType dtDeclare = MDocType.get(getCtx(), C_DocTypeDeclare_ID);
 		MInvoice invoice = null;
 		
-		try {
+		try
+		{
+			int index = 1;
+			
 			pstmt = DB.prepareStatement(sql.toString(), get_TrxName());
-			pstmt.setTimestamp(1, p_Date);
-			pstmt.setTimestamp(2, p_Date_to);
-			pstmt.setInt(3, p_LCO_WithholdingType_ID);
-			pstmt.setInt(4, p_AD_Org_ID);
+			pstmt.setTimestamp(index++, p_Date);
+			pstmt.setTimestamp(index++, p_Date_to);
+			pstmt.setInt(index++, p_LCO_WithholdingType_ID);
+			pstmt.setInt(index++, p_AD_Org_ID);
 			
 			rs = pstmt.executeQuery();
 			
@@ -223,9 +225,13 @@ public class GenerateTaxDeclare extends SvrProcess {
 				invLine.saveEx();
 				declared++;
 			}
-		} catch (SQLException e) {
+		}
+		catch (SQLException e)
+		{
 			log.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		} finally {
+		}
+		finally
+		{
 			DB.close(rs, pstmt);
 			rs = null;
 			pstmt = null;
