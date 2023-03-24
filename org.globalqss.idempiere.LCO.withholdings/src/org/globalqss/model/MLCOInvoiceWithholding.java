@@ -50,7 +50,6 @@ import org.idempiere.cache.ImmutableIntPOCache;
 import org.idempiere.cache.ImmutablePOSupport;
 
 import dev.itechsolutions.model.MITSVoucherWithholding;
-import dev.itechsolutions.util.ColumnUtils;
 
 /**
  *	Invoice Withholding Model
@@ -487,31 +486,11 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 	private static String processInvoice(MInvoice inv, BigDecimal sumit
 			, boolean resetWhAmt, boolean postIt) 
 	{	
-		BigDecimal actualamt = Optional.ofNullable((BigDecimal) inv.get_Value(ColumnUtils.COLUMNNAME_WithholdingAmt))
-				.orElse(BigDecimal.ZERO);
-		
-		if(!resetWhAmt)
-		{
-			List<MLCOInvoiceWithholding> invoiceWithholdings = getFromInvoice(inv.getCtx(), inv.getC_Invoice_ID(), inv.get_TrxName());
-			
-			if(invoiceWithholdings.toArray().length <= 1)
-				actualamt = BigDecimal.ZERO;
-		}
-		
-		/*if (actualamt.compareTo(sumit) != 0 || sumit.signum() != 0) {
-			inv.set_CustomColumn("WithholdingAmt", sumit);
-			// Subtract to invoice grand total the value of withholdings
-			BigDecimal gt = inv.getGrandTotal();
-			inv.setGrandTotal(gt.subtract(sumit));
-			inv.saveEx();  // need to save here in order to let apply get the right total
-		}*/
-		
-		actualamt = sumit.add(resetWhAmt ? BigDecimal.ZERO : actualamt);
 		inv.setGrandTotal(inv.getGrandTotal().subtract(sumit));
-		inv.set_ValueOfColumn(ColumnUtils.COLUMNNAME_WithholdingAmt, actualamt);
 		inv.saveEx();
 		
-		if (sumit.signum() != 0) {
+		if (sumit.signum() != 0)
+		{
 			// GrandTotal changed!  If there are payment schedule records they need to be recalculated
 			// subtract withholdings from the first installment
 			BigDecimal toSubtract = sumit;
@@ -601,7 +580,8 @@ public class MLCOInvoiceWithholding extends X_LCO_InvoiceWithholding implements 
 	}
 	
 	@Override
-	public MAllocationLine getC_AllocationLine() throws RuntimeException {
+	public MAllocationLine getC_AllocationLine() throws RuntimeException
+	{
 		if (m_aLine != null && m_aLine.get_ID() != getC_AllocationLine_ID())
 			m_aLine = null;
 		
