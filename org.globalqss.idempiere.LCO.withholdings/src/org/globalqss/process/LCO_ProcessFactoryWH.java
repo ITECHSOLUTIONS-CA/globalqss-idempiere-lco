@@ -30,6 +30,7 @@ import org.compiere.process.ProcessCall;
 
 import dev.itechsolutions.process.GenerateInvoiceWithholding;
 import dev.itechsolutions.process.GenerateTaxDeclare;
+import dev.itechsolutions.process.GenerateWithholdingVouchers;
 import dev.itechsolutions.process.ITS_GenerateTxtSeniat;
 import dev.itechsolutions.process.ITS_GenerateXmlSeniat;
 
@@ -71,9 +72,13 @@ public class LCO_ProcessFactoryWH implements IProcessFactory {
 				process = ITS_GenerateXmlSeniat.class.getDeclaredConstructor().newInstance();
 			} catch (Exception e) {}
 		}
+		else if (GenerateWithholdingVouchers.class.getCanonicalName().equals(className))
+		{
+			try {
+				process = GenerateWithholdingVouchers.class.getDeclaredConstructor().newInstance();
+			} catch (Exception e) {}
+		}
 		
-		return process;
-		
+		return process;	
 	}
-
 }
