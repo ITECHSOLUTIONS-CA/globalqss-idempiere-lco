@@ -184,6 +184,7 @@ public class GenerateTaxDeclare extends SvrProcess {
 					.append(" WHERE il.ITS_VoucherWithholding_ID = vw.ITS_VoucherWithholding_ID")
 					.append(" AND ci.DocStatus NOT IN ('VO', 'RE') AND ci.AD_Org_ID = iw.AD_Org_ID")
 				.append(")")
+				.append(" AND vw.AD_Client_ID = ?")
 				.append(" GROUP BY vw.ITS_VoucherWithholding_ID");
 		
 		PreparedStatement pstmt = null;
@@ -194,12 +195,14 @@ public class GenerateTaxDeclare extends SvrProcess {
 		
 		MInvoice invoice = null;
 		
-		try {
+		try
+		{
 			pstmt = DB.prepareStatement(sql.toString(), get_TrxName());
 			pstmt.setTimestamp(1, p_DateFrom);
 			pstmt.setTimestamp(2, p_DateTo);
 			pstmt.setInt(3, p_LCO_WithholdingType_ID);
 			pstmt.setInt(4, p_AD_Org_ID);
+			pstmt.setInt(5, getAD_Client_ID());
 			
 			rs = pstmt.executeQuery();
 			

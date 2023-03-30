@@ -213,12 +213,13 @@ public class GenerateWithholdingVouchers extends SvrProcess {
 	
 				sql.append(" AND cd.GenerateWithholding = 'Y'")
 				   .append(" AND i.IsSOTrx = ?")
-				   .append(" AND i.DocStatus IN ('CO','CL')");
+				   .append(" AND i.DocStatus IN ('CO','CL')")
+				   .append(" AND i.AD_Client_ID = ?");
 				
 				if(!MSysConfig.getBooleanValue(ColumnUtils.SYSCONFIG_LVE_GenerateInvoiceWithholdingIsPaid, false
 						, getAD_Client_ID()))
 					sql.append(" AND i.ISPaid = 'N'");
-			
+				
 				sql.append(" GROUP BY i.C_BPartner_ID, i.AD_Org_ID, DATE_TRUNC('day', i.DateAcct)");
 				
 				ResultSet rs = null;
@@ -242,6 +243,7 @@ public class GenerateWithholdingVouchers extends SvrProcess {
 						pstmt.setInt(index++, p_C_Invoice_ID);
 					
 					pstmt.setString(index++, IsSOTrx ? "Y" : "N");
+					pstmt.setInt(index++, getAD_Client_ID());
 					
 					rs = pstmt.executeQuery();
 					
@@ -344,7 +346,7 @@ public class GenerateWithholdingVouchers extends SvrProcess {
 			pstmtwt = null;
 		}
 		
-		return "@ITS_VoucherWithholdings@ @Generate@: " + count;
+		return "@ITS_VoucherWithholding_ID@ @Generate@: " + count;
 		
 	}//	doIt
 
