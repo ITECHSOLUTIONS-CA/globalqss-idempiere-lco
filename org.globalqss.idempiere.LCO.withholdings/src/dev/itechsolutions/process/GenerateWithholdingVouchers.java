@@ -262,16 +262,18 @@ public class GenerateWithholdingVouchers extends SvrProcess {
 						
 						voucher.setAD_Org_ID(AD_Org_ID);
 						voucher.setC_BPartner_ID(C_BPartner_ID);
+						voucher.setDateFrom(Date);
+						voucher.setDateTo(Date);
 						
 						if(p_DaysBack > 0)
 						{
 							voucher.setDateTrx(Date);
-							voucher.set_ValueOfColumn("DateAcct",Date);								
+							voucher.setDateAcct(Date);						
 						}
 						else
 						{
 							voucher.setDateTrx(p_DateTrx);
-							voucher.set_ValueOfColumn("DateAcct", p_DateTrx);							
+							voucher.setDateAcct(p_DateTrx);
 						}
 						
 						voucher.setLCO_WithholdingType_ID(LCO_WithholdingType_ID);
@@ -291,7 +293,6 @@ public class GenerateWithholdingVouchers extends SvrProcess {
 						{								
 							ins = invoice.recalcWithholdings(voucher);
 							vins +=  ins;
-							count += ins;
 						}
 						
 						if(vins>0)
@@ -302,8 +303,10 @@ public class GenerateWithholdingVouchers extends SvrProcess {
 								{
 									if(!voucher.processIt(p_DocAction))
 										throw new AdempiereException(voucher.getProcessMsg());
+									else
+										count++;
 									
-								} catch (Exception e)
+								}catch (Exception e)
 								{
 									throw new AdempiereException(e.getLocalizedMessage());
 								}

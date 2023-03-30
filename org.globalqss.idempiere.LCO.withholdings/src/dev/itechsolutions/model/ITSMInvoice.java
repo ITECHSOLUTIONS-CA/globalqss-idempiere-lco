@@ -112,18 +112,18 @@ public class ITSMInvoice extends LCO_MInvoice {
 			
 			if (voucher.getDateFrom() != null && voucher.getDateTo() != null)
 			{
-				sql.append(" AND TRUNC(C_Invoice.DateInvoiced, 'DD') BETWEEN ? AND ?");
+				sql.append(" AND TRUNC(C_Invoice.DateAcct, 'DD') BETWEEN ? AND ?");
 				params.add(voucher.getDateFrom());
 				params.add(voucher.getDateTo());
 			}
 			else if (voucher.getDateFrom() != null)
 			{
-				sql.append(" AND C_Invoice.DateInvoiced >= ?");
+				sql.append(" AND C_Invoice.DateAcct >= ?");
 				params.add(voucher.getDateFrom());
 			}
 			else if (voucher.getDateTo() != null)
 			{
-				sql.append(" AND TRUNC(C_Invoice.DateInvoiced, 'DD') <= ?");
+				sql.append(" AND TRUNC(C_Invoice.DateAcct, 'DD') <= ?");
 				params.add(voucher.getDateTo());
 			}
 		}
