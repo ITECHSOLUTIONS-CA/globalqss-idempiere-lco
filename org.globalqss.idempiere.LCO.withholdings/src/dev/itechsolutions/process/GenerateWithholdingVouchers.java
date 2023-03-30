@@ -262,8 +262,6 @@ public class GenerateWithholdingVouchers extends SvrProcess {
 						
 						voucher.setAD_Org_ID(AD_Org_ID);
 						voucher.setC_BPartner_ID(C_BPartner_ID);
-						voucher.setDateFrom(Date);
-						voucher.setDateTo(Date);
 						
 						if(p_DaysBack > 0)
 						{
