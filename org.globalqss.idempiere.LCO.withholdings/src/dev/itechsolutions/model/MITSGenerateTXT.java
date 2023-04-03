@@ -37,7 +37,7 @@ public class MITSGenerateTXT extends X_ITS_GenerateTXT implements ImmutablePOSup
 				.append(" AND AD_Org_ID = ?")
 				.append(" AND ITS_TypeOperation = ?")
 				.append(" AND ITS_GenerateTXT_ID <> ?")
-				.append(" AND (.ValidFrom BETWEEN ? AND ?")
+				.append(" AND (ValidFrom BETWEEN ? AND ?")
 				.append(" OR ValidTo BETWEEN ? AND ?) ");
 		
 		MITSGenerateTXT retVal = new Query(getCtx(), MITSGenerateTXT.Table_Name, where.toString(), get_TrxName())
