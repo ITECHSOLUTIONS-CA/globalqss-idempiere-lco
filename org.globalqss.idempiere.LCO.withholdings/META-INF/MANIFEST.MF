@@ -25,7 +25,7 @@ Service-Component: OSGI-INF/lco_modelfactorywh.xml,OSGI-INF/lco_processfactorywh
 Import-Package: org.osgi.service.event
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
- src/dev/itechsolutions/lib/jdom2.jar
+ lib/jdom2.jar
 Automatic-Module-Name: org.globalqss.idempiere.LCO.withholdings
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version>=11))"
