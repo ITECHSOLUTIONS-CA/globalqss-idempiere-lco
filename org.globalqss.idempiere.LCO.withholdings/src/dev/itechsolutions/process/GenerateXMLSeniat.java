@@ -67,7 +67,7 @@ public class GenerateXMLSeniat extends SvrProcess {
 		
 		//	Update Header Amt
 		StringBuilder totalAmt = new StringBuilder("SELECT ")
-				.append("SUM (currencyConvert(iw.TaxAmt, vw.C_Currency_ID, ?")
+				.append("SUM (currencyConvert(iw.ConvertedTaxAmt, vw.C_Currency_ID, ?")
 				.append(", i.DateInvoiced, i.C_ConversionType_ID")
 				.append(", i.AD_Client_ID, i.AD_Org_ID)) ")
 				.append("FROM LCO_InvoiceWithholding iw ")
