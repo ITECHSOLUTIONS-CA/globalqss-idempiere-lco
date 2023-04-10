@@ -102,8 +102,6 @@ public class GenerateXMLSeniat extends SvrProcess {
 			generateXML.saveEx(get_TrxName());
 		}
 		
-		Element root = null;
-		
 		String day, month , year;
 		
 		Calendar CalendarDate = new GregorianCalendar();
@@ -118,6 +116,8 @@ public class GenerateXMLSeniat extends SvrProcess {
 		String fileNameXML = fileName + date + ".xml";
 		
 		FileOutputStream file = new FileOutputStream(fileNameXML);
+		
+		Element root = new Element("RelacionRetencionesISLR");
 		
 		StringBuilder sql = new StringBuilder("SELECT TaxID")
 				.append(", DocumentNo")
@@ -161,8 +161,6 @@ public class GenerateXMLSeniat extends SvrProcess {
 			
 			while(rs.next())
 			{
-				root = new Element("RelacionRetencionesISLR");
-				
 				root.setAttribute("RifAgente", rs.getString(8).trim());
 				root.setAttribute("Periodo", rs.getString(9).trim());
 			    		    
@@ -208,7 +206,7 @@ public class GenerateXMLSeniat extends SvrProcess {
 			pstmt = null;
 		}
 	
-		if(root!=null)
+		if(root.getContentSize() > 0)
 		{
 			//	Create Document
 			Document doc=new Document(root);

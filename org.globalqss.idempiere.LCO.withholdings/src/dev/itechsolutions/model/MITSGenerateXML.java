@@ -93,5 +93,11 @@ public class MITSGenerateXML extends X_ITS_GenerateXML implements ImmutablePOSup
 	{
 		return null;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "" + getITS_GenerateXML_ID();
+	}
 	
 }//	MITSGenerateXML
