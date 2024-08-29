@@ -15,14 +15,14 @@ import dev.itechsolutions.util.ColumnUtils;
  * @author Argenis Rodríguez
  *
  */
-@Callout(tableName = MITSVoucherWithholding.Table_Name
-, columnName = {MITSVoucherWithholding.COLUMNNAME_C_DocType_ID
-		, MITSVoucherWithholding.COLUMNNAME_C_Invoice_ID
-		, MITSVoucherWithholding.COLUMNNAME_DateFrom
-		, MITSVoucherWithholding.COLUMNNAME_DateTo})
+@Callout(tableName = "ITS_VoucherWithholding"
+, columnName = {"C_DocType_ID"
+		, "C_Invoice_ID"
+		, "DateFrom"
+		, "DateTo"})
 public class CalloutVoucher extends CustomCallout {
 	
-	@ColumnCallout(columnName = MITSVoucherWithholding.COLUMNNAME_C_DocType_ID)
+	@ColumnCallout(columnName = "C_DocType_ID")
 	public String docType() {
 		
 		if (isCalloutActive())
@@ -32,7 +32,7 @@ public class CalloutVoucher extends CustomCallout {
 		
 		if (C_DocType_ID <= 0)
 		{
-			setValue(MITSVoucherWithholding.COLUMNNAME_LCO_WithholdingType_ID, null);
+			setValue("LCO_WithholdingType_ID", null);
 			return null;
 		}
 		

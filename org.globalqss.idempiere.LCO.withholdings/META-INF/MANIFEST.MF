@@ -1,23 +1,23 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Localization Colombia - Withholdings
-Bundle-SymbolicName: org.globalqss.idempiere.LCO.withholdings;singleton:=true
-Bundle-Version: 10.0.0.qualifier
-Bundle-Activator: org.adempiere.plugin.utils.AdempiereActivator
+Bundle-SymbolicName: org.globalqss.idempiere.LCO.withholdings
+Bundle-Version: 11.0.0.qualifier
+Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
 Bundle-Vendor: GlobalQSS
-Require-Bundle: org.adempiere.base;bundle-version="10.0.0",
- org.adempiere.plugin.utils;bundle-version="10.0.0",
- org.adempiere.base.callout;bundle-version="10.0.0",
- org.adempiere.ui;bundle-version="10.0.0",
- org.idempiere.zk.extra;bundle-version="10.0.0",
- zcommon;bundle-version="9.6.3",
- zel;bundle-version="9.6.3",
- zhtml;bundle-version="9.6.3",
- zk;bundle-version="9.6.3",
- zkbind;bundle-version="9.6.3",
- zkplus;bundle-version="9.6.3",
- zul;bundle-version="9.6.3",
- org.adempiere.ui.zk;bundle-version="10.0.0"
+Require-Bundle: org.adempiere.base;bundle-version="11.0.0",
+ org.adempiere.plugin.utils;bundle-version="11.0.0",
+ org.adempiere.base.callout;bundle-version="11.0.0",
+ org.adempiere.ui;bundle-version="11.0.0",
+ org.idempiere.zk.extra;bundle-version="11.0.0",
+ zcommon;bundle-version="9.6.4",
+ zel;bundle-version="9.6.4",
+ zhtml;bundle-version="9.6.4",
+ zk;bundle-version="9.6.4",
+ zkbind;bundle-version="9.6.4",
+ zkplus;bundle-version="9.6.4",
+ zul;bundle-version="9.6.4",
+ org.adempiere.ui.zk;bundle-version="11.0.0"
 Export-Package: org.globalqss.model,
  org.globalqss.process
 Service-Component: OSGI-INF/lco_modelfactorywh.xml,OSGI-INF/lco_processfactorywh.xml,OSGI-INF/lco_calloutfactorywh.xml,OSGI-INF/lco_validatorwh.xml,OSGI-INF/LocationExtendedDisplayFactory.xml,OSGI-INF/LocationExtendedEditorFactory.xml,
@@ -27,5 +27,5 @@ Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
  lib/jdom2.jar
 Automatic-Module-Name: org.globalqss.idempiere.LCO.withholdings
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version>=11))"

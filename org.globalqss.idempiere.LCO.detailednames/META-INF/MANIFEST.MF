@@ -1,12 +1,12 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Localization Colombia - Detailed Names
-Bundle-SymbolicName: org.globalqss.idempiere.LCO.detailednames;singleton:=true
-Bundle-Version: 10.0.0.qualifier
-Bundle-Activator: org.adempiere.plugin.utils.AdempiereActivator
+Bundle-SymbolicName: org.globalqss.idempiere.LCO.detailednames
+Bundle-Version: 11.0.0.qualifier
+Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
 Bundle-Vendor: GlobalQSS
-Require-Bundle: org.adempiere.base;bundle-version="10.0.0",
- org.adempiere.plugin.utils;bundle-version="10.0.0"
+Require-Bundle: org.adempiere.base;bundle-version="11.0.0",
+ org.adempiere.plugin.utils;bundle-version="11.0.0"
 Export-Package: org.globalqss.model,
  org.globalqss.util
 Service-Component: OSGI-INF/lco_modelfactorydn.xml,
@@ -18,5 +18,5 @@ Import-Package: org.osgi.service.event
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
 Automatic-Module-Name: org.globalqss.idempiere.LCO.detailednames
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version>=11))"
